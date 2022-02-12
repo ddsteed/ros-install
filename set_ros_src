@@ -1,4 +1,4 @@
-#!/usr/bin/env  zsh
+#!/usr/bin/env  bash
 
 #-----------------------------------------------------------------------------------
 # This script is to install ros from source
@@ -298,7 +298,9 @@ function pip_stuff {
 
             for app in ${lib[@]}; do
                 echo
+                echo "      ----------------------------------------- "
                 echo "      ... $app is now being installed ..."
+                echo "      ----------------------------------------- "
                 echo
                 if [[ $app == pygraphviz ]]; then
                     pip3 $run -U $app $opt
@@ -328,50 +330,59 @@ function pip_stuff {
 
 function src_stuff {
     source $rosenv/bin/activate
-
-    app=(sip PyQt)
-    
     mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
-    # get source codes
+    # set versions
     vsip=4.19.13
     vpyqt=5.11.3
-    
-    if [ ! -f "sip-$vsip.tar.gz" ]; then
-        wget https://sourceforge.net/projects/pyqt/files/sip/sip-$vsip/sip-$vsip.tar.gz
-    fi
-
-    if [ ! -f "PyQt5_gpl-$vpyqt.tar.gz" ]; then
-        wget https://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-$vpyqt/PyQt5_gpl-$vpyqt.tar.gz
-    fi
 
     # install SIP first
     echo 
     echo "   - install sip manually ..."
     echo "     ----------- "
     echo
-    cd $rosenv/tmp
-    tar xzf sip-$vsip.tar.gz
-    cd sip-$vsip
-    python3 ./configure.py
-    make
-    make install
-    cd .. && rm -rf sip-$vsip
+    if [[ ! `pip3 list | grep sip` ]]; then
+        if [ ! -f "sip-$vsip.tar.gz" ]; then
+            wget https://sourceforge.net/projects/pyqt/files/sip/sip-$vsip/sip-$vsip.tar.gz
+        fi
+        cd $rosenv/tmp
+        tar xzf sip-$vsip.tar.gz
+        cd sip-$vsip
+        python3 ./configure.py
+        make
+        make install
+        cd .. && rm -rf sip-$vsip
+    else
+        echo
+        echo "     - sip has been installed."
+        echo
+    fi
+    
 
     # install pyqt
     echo 
     echo "   - install PyQt manually ..."
     echo "     ------------ "
     echo
-    cd $rosenv/tmp
-    tar xzf PyQt5_gpl-$vpyqt.tar.gz
-    cd PyQt5_gpl-$vpyqt
+    if [[ ! `pip3 list | grep PyQt` ]]; then
+        if [ ! -f "PyQt5_gpl-$vpyqt.tar.gz" ]; then
+            wget https://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-$vpyqt/PyQt5_gpl-$vpyqt.tar.gz
+        fi
 
-    export PATH="$(brew --prefix qt@5)/bin:$PATH"
-    yes yes | python3 ./configure.py --sip $rosenv/bin/sip 
-    make -j 8
-    make install
-    cd .. && rm -rf PyQt5_gpl-$vpyqt
+        cd $rosenv/tmp
+        tar xzf PyQt5_gpl-$vpyqt.tar.gz
+        cd PyQt5_gpl-$vpyqt
+
+        export PATH="$(brew --prefix qt@5)/bin:$PATH"
+        yes yes | python3 ./configure.py --sip $rosenv/bin/sip 
+        make -j 8
+        make install
+        cd .. && rm -rf PyQt5_gpl-$vpyqt
+    else
+        echo
+        echo "     - PyQt has been installed."
+        echo
+    fi
 
     # ROS 2 needs pyqt5.sip module
     echo 
