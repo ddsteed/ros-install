@@ -1,4 +1,4 @@
-#!/usr/bin/env  bash
+#!/usr/bin/env  zsh
 
 #-----------------------------------------------------------------------------------
 # This script is to install ros from source
@@ -14,7 +14,7 @@
 export roshome=/Users/fengh/Research/ROS
 export rosbin=/opt/ros
 
-export distribution_default=melodic
+export distribution_default=noetic
 export run_default=install
 export rosenv_default=pipenv
 export step_default=compile
@@ -292,12 +292,14 @@ function pip_stuff {
             echo 
             echo "   - $run pip packages in $rosenv ... "
             echo "     -------- "
-            echo
 
             opt="--global-option=build_ext --global-option='-I/usr/local/include/' \
                  --global-option='-L/usr/local/lib' "
 
             for app in ${lib[@]}; do
+                echo
+                echo "      ... $app is now being installed ..."
+                echo
                 if [[ $app == pygraphviz ]]; then
                     pip3 $run -U $app $opt
                 else
@@ -321,12 +323,14 @@ function pip_stuff {
 }
 
 #-----------------------------------------------------------------------------------
-# some tools/libraries, like sip/PyQt could NOT found if installed by brew/apt,
-# so one has to install them manually.
+# some tools/libraries, like sip/PyQt could NOT be found if installed by brew/apt,
+# so they have to be installed manually.
 
 function src_stuff {
     source $rosenv/bin/activate
 
+    app=(sip PyQt)
+    
     mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
     # get source codes
@@ -362,6 +366,8 @@ function src_stuff {
     cd $rosenv/tmp
     tar xzf PyQt5_gpl-$vpyqt.tar.gz
     cd PyQt5_gpl-$vpyqt
+
+    export PATH="$(brew --prefix qt@5)/bin:$PATH"
     yes yes | python3 ./configure.py --sip $rosenv/bin/sip 
     make -j 8
     make install
