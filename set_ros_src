@@ -4,7 +4,7 @@
 # This script is to install ros from source
 #
 # Author: Hao Feng (F1)
-# Date:   Dec. 31, 2021
+# Date:   Feb. 12, 2022
 #
 # Copyright (c) 2021, FATAVAY CO., LTD.
 #-----------------------------------------------------------------------------------
@@ -26,10 +26,12 @@ export shell_dir=$(cd "$(dirname "$0")";pwd)
 
 #-----------------------------------------------------------------------------------
 function print_welcome {
+    # ---
     echo
     echo "* ----------------------------------------------------------------- "
     echo "* This script is to install/remove ROS distribution from source ... "
 
+    # ---
     echo
     echo "* ------- "
     echo "* specify ros distribution name ... "
@@ -41,6 +43,7 @@ function print_welcome {
     read distribution
     if [[ $distribution == "" ]]; then export distribution=$distribution_default; fi
 
+    # ---
     echo
     echo "* ------- "
     echo "* specify run mode ... "
@@ -49,6 +52,7 @@ function print_welcome {
     read run
     if [[ $run == "" ]]; then export run=$run_default; fi
 
+    # ---
     echo
     echo "* ------- "
     echo "* specify step ... "
@@ -57,6 +61,7 @@ function print_welcome {
     read step
     if [[ $step == "" ]]; then export step=$step_default; fi
 
+    # ---
     catkin_default=$roshome/${distribution}
     echo
     echo "* ------- "
@@ -66,10 +71,12 @@ function print_welcome {
     read catkin
     if [[ $catkin == "" ]]; then export catkin=$catkin_default; fi
 
+    # ---
     export bipath=$rosbin/${distribution}_src
     mkdir -p $bipath
     echo "The build & install base is: $bipath"
 
+    # ---
     echo
     echo "* ------- "
     echo "* specify ros virtual envrionment directory ... "
@@ -78,6 +85,7 @@ function print_welcome {
     read rosenv
     if [[ $rosenv == "" ]]; then export rosenv=$bipath/../$rosenv_default; fi
         
+    # ---
     if [[ $step == "all" || $step == "compile" ]]; then
         echo
         echo "* ------- "
@@ -95,7 +103,6 @@ function print_welcome {
         read package
         if [[ $package == "" ]]; then export package=$package_default; fi
     fi
-    
 }
 
 #-----------------------------------------------------------------------------------
@@ -642,8 +649,8 @@ function build_src {
             if [[ $distribution == "foxy" ]]; then
                 colcon_comp
             elif [[ $distribution == "melodic" || $distribution == "noetic" ]]; then
-#               catkin_comp current   -DCATKIN_WHITELIST_PACKAGES=""
-                catkin_comp isolated  -DCATKIN_WHITELIST_PACKAGES=""
+                catkin_comp current   -DCATKIN_WHITELIST_PACKAGES=""
+#               catkin_comp isolated  -DCATKIN_WHITELIST_PACKAGES=""
             fi
             ;;
         *)
