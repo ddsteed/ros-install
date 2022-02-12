@@ -1,0 +1,666 @@
+#!/usr/bin/env  bash
+
+#-----------------------------------------------------------------------------------
+# This script is to install ros from source
+#
+# Author: Hao Feng (F1)
+# Date:   Dec. 31, 2021
+#
+# Copyright (c) 2021, FATAVAY CO., LTD.
+#-----------------------------------------------------------------------------------
+
+#- set global varialbles
+
+export roshome=/Users/fengh/Research/ROS
+export rosbin=/opt/ros
+
+export distribution_default=melodic
+export run_default=install
+export rosenv_default=pipenv
+export step_default=compile
+export compiler_default=clang
+export package_default=all
+
+export os=`uname`
+export shell_dir=$(cd "$(dirname "$0")";pwd)
+
+#-----------------------------------------------------------------------------------
+function print_welcome {
+    echo
+    echo "* ----------------------------------------------------------------- "
+    echo "* This script is to install/remove ROS distribution from source ... "
+
+    echo
+    echo "* ------- "
+    echo "* specify ros distribution name ... "
+    echo
+    echo  "         ROS1: noetic/melodic "
+    echo  "         ROS2: foxy "
+    echo
+    echo -n " * Please input ros name, [$distribution_default]: "
+    read distribution
+    if [[ $distribution == "" ]]; then export distribution=$distribution_default; fi
+
+    echo
+    echo "* ------- "
+    echo "* specify run mode ... "
+    echo
+    echo -n "* Please input run mode: install/remove, [$run_default]: "
+    read run
+    if [[ $run == "" ]]; then export run=$run_default; fi
+
+    echo
+    echo "* ------- "
+    echo "* specify step ... "
+    echo
+    echo -n "* Please input step: all/auxilary/getsrc/compile, [$step_default]: "
+    read step
+    if [[ $step == "" ]]; then export step=$step_default; fi
+
+    catkin_default=$roshome/${distribution}
+    echo
+    echo "* ------- "
+    echo "* specify ros source directory ... "
+    echo
+    echo -n "* Please input the ros source directory, [$catkin_default]: "
+    read catkin
+    if [[ $catkin == "" ]]; then export catkin=$catkin_default; fi
+
+    export bipath=$rosbin/${distribution}_src
+    mkdir -p $bipath
+    echo "The build & install base is: $bipath"
+
+    echo
+    echo "* ------- "
+    echo "* specify ros virtual envrionment directory ... "
+    echo
+    echo -n "* Please input the ros virtual environment directory, [$bipath/../$rosenv_default]: "
+    read rosenv
+    if [[ $rosenv == "" ]]; then export rosenv=$bipath/../$rosenv_default; fi
+        
+    if [[ $step == "all" || $step == "compile" ]]; then
+        echo
+        echo "* ------- "
+        echo "* specify compilers ... "
+        echo
+        echo -n "* Please input compilers: clang/gnu/intel, [$compiler_default]: "
+        read compiler
+        if [[ $compiler == "" ]]; then export compiler=$compiler_default; fi
+
+        echo
+        echo "* ------- "
+        echo "* specify package to be compiled ..."
+        echo
+        echo -n "* Please input package name, [$package_default]: "
+        read package
+        if [[ $package == "" ]]; then export package=$package_default; fi
+    fi
+    
+}
+
+#-----------------------------------------------------------------------------------
+function set_auxilary {
+    case $os in
+        Darwin)
+            brew_stuff
+            ;;
+        Linux)
+            set_locale
+            add_apt_repository
+            apt_tools
+            ;;
+    esac
+
+    pip_stuff
+
+    src_stuff
+}
+
+#-----------------------------------------------------------------------------------
+function set_locale {
+    echo
+    echo "* ------ "
+    echo "* set locale ... "
+    echo
+
+    case $distribution in
+        noetic | melodic)
+            ;;
+        foxy)
+            locale  # check for UTF-8
+
+            sudo apt update && sudo apt install locales
+            sudo locale-gen en_US en_US.UTF-8
+            sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+            export LANG=en_US.UTF-8
+
+            locale  # verify settings
+            ;;
+    esac
+}
+
+#-----------------------------------------------------------------------------------
+function add_apt_repository {
+    echo
+    echo "* ------ "
+    echo "* add apt repository ..."
+    echo
+
+    case $distribution in
+        noetic | melodic)
+            ;;
+        foxy)
+            sudo apt install software-properties-common
+            sudo add-apt-repository universe
+
+            sudo apt update && sudo apt install curl gnupg lsb-release
+            #   sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key  \
+            #        -o /usr/share/keyrings/ros-archive-keyring.gpg
+
+            sudo cp $shell_dir/ros.key /usr/share/keyrings/ros-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(source /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+            sudo -E apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+            ;;
+    esac
+}
+
+#-----------------------------------------------------------------------------------
+function apt_tools {
+    case $distribution in
+        melodic)
+            lib=(python-rosdep python-rosinstall-generator python-vcstool python-rosinstall build-essential)
+            ;;
+        noetic)
+            lib=(build-essential liborocos-kdl-dev)
+            ;;
+        foxy)
+            lib=(build-essential \
+                     cmake git libbullet-dev liblog4cxx-dev libeigen3-dev \
+                     libboost-all-dev libbz2-dev \
+                     librosconsole-bridge-dev libpoco-doc libpoco-dev \
+                     libtinyxml-dev libtinyxml-doc \
+                     libopencv-dev python3-opencv \
+                     python3-colcon-common-extensions python3-flake8 \
+                     python3-pip python3-pytest-cov python3-rosdep \
+                     python-sip python-sip-dev python-sip-doc python-sip-dbg \
+                     python3-setuptools python3-vcstool python3-venv \
+                     qt5-default)
+
+            # install Fast-RTPS dependencies
+            lib=(${lib[@]} libasio-dev libtinyxml2-dev)
+
+            # install Cyclone DDS dependencies
+            lib=(${lib[@]} libcunit1-dev)
+            ;;
+    esac
+
+    echo
+    echo "* ------ "
+    echo "* apt $run some stuff ... "
+    echo
+    sudo apt update
+    sudo apt $run --no-install-recommends -y ${lib[@]}
+}
+
+#-----------------------------------------------------------------------------------
+function brew_stuff {
+    source ~/Init/x86
+    echo
+    echo "* ------ "
+    echo "* brew $run some stuff ... "
+    echo
+
+    if [[ $run == "remove" ]]; then
+        opt1=-f
+        opt2=--ignore-dependencies
+    fi
+
+    case $distribution in
+        melodic)
+            lib=(cmake sip pyqt5 graphviz qt@5)
+            lib=(${lib[@]} orocos-kdl boost boost-python3 urdfdom log4cxx)
+            ;;
+        noetic)
+            lib=(cmake sip pyqt5 graphviz qt@5)
+            lib=(${lib[@]} orocos-kdl boost boost-python3 urdfdom log4cxx)
+            ;;
+        foxy)
+            lib=(bullet cmake cppcheck eigen pcre poco tinyxml wget)
+            
+            lib=(${lib[@]} asio tinyxml2)        # dependencies for Fast-RTPS if you are using it
+            lib=(${lib[@]} opencv)
+            
+            lib=(${lib[@]} console_bridge)       # console_bridge for rosbag2
+            lib=(${lib[@]} openssl)              # OpenSSL for DDS-Security
+            lib=(${lib[@]} log4cxx spdlog)       # dependencies for rcl_logging
+            lib=(${lib[@]} bison cunit)          # dependencies for Cyclone DDS
+            lib=(${lib[@]} qt@5 freetype assimp) # dependencies for Rviz
+            lib=(${lib[@]} graphviz pyqt5 sip)   # rqt dependencies
+            ;;
+    esac
+    
+    arch -x86_64 /usr/local/bin/brew  $run ${lib[@]}  $opt1 $opt2
+}
+
+#-----------------------------------------------------------------------------------
+function pip_stuff {
+    echo
+    echo "* ------- "
+    echo "* pip $run some stuff ... "
+    echo
+
+    case $distribution in
+        melodic | noetic)
+            if [[ $os == "Darwin" ]]; then
+                lib=(rosdep rosinstall_generator vcstool \
+                            empy wheel \
+                    pygraphviz pydot)
+            elif [[ $os == "Linux" ]]; then
+                lib=(rosdep rosinstall_generator vcstool \
+                            empy)
+            fi
+            ;;
+        foxy)
+            if [[ $os == "Darwin" ]]; then
+                lib=(argcomplete \
+                         catkin_pkg colcon-common-extensions coverage \
+                         cryptography empy flake8 flake8-blind-except flake8-builtins \
+                         flake8-class-newline flake8-comprehensions flake8-deprecated \
+                         flake8-docstrings flake8-import-order flake8-quotes ifcfg \
+                         importlib-metadata lark lark-parser lxml mock mypy==0.761 netifaces \
+                         nose numpy pep8 pydocstyle pydot pygraphviz pyparsing \
+                         pytest-mock rosdep setuptools vcstool rosdistro)
+            elif [[ $os == "Linux" ]]; then
+                lib=(argcomplete \
+                         catkin_pkg empy \
+                         flake8-blind-except flake8-builtins flake8-class-newline \
+                         flake8-comprehensions flake8-deprecated flake8-docstrings \
+                         flake8-import-order flake8-quotes \
+                         lark numpy pyqt5 \
+                         pytest-repeat pytest-rerunfailures pytest)
+            fi
+            ;;
+    esac
+    
+    case $run in
+        install)
+            echo "   - create virtual python environment ..."
+            python3 -m venv   $rosenv
+            source $rosenv/bin/activate
+            $rosenv/bin/python3 -m pip install --upgrade pip
+
+            echo 
+            echo "   - $run pip packages in $rosenv ... "
+            echo "     -------- "
+            echo
+
+            opt="--global-option=build_ext --global-option='-I/usr/local/include/' \
+                 --global-option='-L/usr/local/lib' "
+
+            for app in ${lib[@]}; do
+                if [[ $app == pygraphviz ]]; then
+                    pip3 $run -U $app $opt
+                else
+                    pip3 $run -U $app
+                fi
+            done
+            
+            pip3 $run --upgrade setuptools
+            ;;
+        remove)
+            echo "   - $run pip packages in $rosenv ... "
+            echo "     -------- "
+            echo
+            source $rosenv/bin/activate && pip3 uninstall -y ${lib[@]}
+
+            echo "   - delete virtual python environment $rosenv ... "
+            rm -rf $rosenv
+            ;;
+    esac
+
+}
+
+#-----------------------------------------------------------------------------------
+# some tools/libraries, like sip/PyQt could NOT found if installed by brew/apt,
+# so one has to install them manually.
+
+function src_stuff {
+    source $rosenv/bin/activate
+
+    mkdir -p $rosenv/tmp && cd $rosenv/tmp
+
+    # get source codes
+    vsip=4.19.13
+    vpyqt=5.11.3
+    
+    if [ ! -f "sip-$vsip.tar.gz" ]; then
+        wget https://sourceforge.net/projects/pyqt/files/sip/sip-$vsip/sip-$vsip.tar.gz
+    fi
+
+    if [ ! -f "PyQt5_gpl-$vpyqt.tar.gz" ]; then
+        wget https://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-$vpyqt/PyQt5_gpl-$vpyqt.tar.gz
+    fi
+
+    # install SIP first
+    echo 
+    echo "   - install sip manually ..."
+    echo "     ----------- "
+    echo
+    cd $rosenv/tmp
+    tar xzf sip-$vsip.tar.gz
+    cd sip-$vsip
+    python3 ./configure.py
+    make
+    make install
+    cd .. && rm -rf sip-$vsip
+
+    # install pyqt
+    echo 
+    echo "   - install PyQt manually ..."
+    echo "     ------------ "
+    echo
+    cd $rosenv/tmp
+    tar xzf PyQt5_gpl-$vpyqt.tar.gz
+    cd PyQt5_gpl-$vpyqt
+    yes yes | python3 ./configure.py --sip $rosenv/bin/sip 
+    make -j 8
+    make install
+    cd .. && rm -rf PyQt5_gpl-$vpyqt
+
+    # ROS 2 needs pyqt5.sip module
+    echo 
+    echo "   - install pyqt5.sip module ..."
+    echo "     ----------------- "
+    echo
+    pip3 $run -U pyqt5.sip
+}
+
+#-----------------------------------------------------------------------------------
+function set_compiler {
+        case $compiler in
+        gnu)
+            export CC=gcc-11
+            export CXX=g++-11
+            ;;
+        intel)
+            export CC=icc
+            export CXX=icpc
+            ;;
+        clang)
+            export CC=clang
+            export CXX=clang++
+            ;;
+    esac
+
+    echo
+    echo "* ------ "
+    echo "* compilers are: "
+    echo "     - C compiler:        $CC"
+    echo "     - CXX compiler:      $CXX"
+    echo
+}
+
+#-----------------------------------------------------------------------------------
+function set_env {
+    case $distribution in
+        melodic | noetic)
+            if [[ $os == "Darwin" ]]; then
+                source ~/Init/x86
+
+                export CPPFLAGS="-fno-delete-null-pointer-checks"
+                export CPPFLAGS="-I$(brew --prefix qt@5)/include $CPPFLAGS"
+                export CPPFLAGS="-I$(brew --prefix log4cxx)/include $CPPFLAGS"
+
+                export CMAKE_PREFIX_PATH="$(brew --prefix eigen):$CMAKE_PREFIX_PATH"
+                export CMAKE_PREFIX_PATH="$(brew --prefix eigen)/include/eigen3:$CMAKE_PREFIX_PATH"
+                export CMAKE_PREFIX_PATH="$(brew --prefix log4cxx):$CMAKE_PREFIX_PATH"
+                export CMAKE_PREFIX_PATH="$(brew --prefix qt@5):$CMAKE_PREFIX_PATH"
+
+                export PATH="$(brew --prefix qt@5)/bin:$PATH"
+
+            elif [[ $os == "Linux" ]]; then
+                export CMAKE_PREFIX_PATH="/usr/include/eigen3:$CMAKE_PREFIX_PATH"
+            fi
+            ;;
+
+        foxy)
+            if [[ $os == "Darwin" ]]; then
+                source ~/Init/x86
+
+                # if you are using ZSH, then replace '.bashrc' with '.zshrc'
+                # echo "export OPENSSL_ROOT_DIR=$(brew --prefix openssl)" >> ~/.bashrc
+                export OPENSSL_ROOT_DIR=$(brew --prefix openssl)
+
+                # bison
+                export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:/usr/local/opt/bison
+                export PATH="/usr/local/opt/bison/bin:$PATH"
+                export LDFLAGS="-L$(brew --prefix bison)/lib $LDFLAGS"
+
+                # add the Qt directory to the PATH and CMAKE_PREFIX_PATH
+                export LDFLAGS="-L$(brew --prefix qt@5)/lib $LDFLAGS"
+                export CPPFLAGS="-I$(brew --prefix qt@5)/include -I$(brew --prefix opencv)/include/opencv4"
+
+                export CMAKE_PREFIX_PATH="$(brew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
+                export CMAKE_PREFIX_PATH="$(brew --prefix qt@5):$CMAKE_PREFIX_PATH"
+                export PATH="$(brew --prefix qt@5)/bin:$PATH"
+                export PATH="$(brew --prefix opencv)/bin:$PATH"
+
+            elif [[ $os == "Linux" ]]; then
+                export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:/usr/include/eigen3"
+                export LDFLAGS="-latomic $LDFLAGS"
+            fi
+            ;;
+    esac
+
+    echo
+    echo "* ------ "
+    echo "* environments are: "
+
+    echo "     - CMAKE_PREFIX_PATH: $CMAKE_PREFIX_PATH"
+    echo "     - OPENSSL_ROOT_DIR:  $OPENSSL_ROOT_DIR"
+    echo "     - LDFLAGS:           $LDFLAGS"
+    echo "     - CPPFLAGS:          $CPPFLAGS"
+    echo "     - PYTHON ENV:        $rosenv "
+    echo
+
+    source $rosenv/bin/activate
+}
+
+#-----------------------------------------------------------------------------------
+function get_code {
+    source $rosenv/bin/activate
+
+    echo
+    echo "* ------- "
+    echo
+    echo "* create catkin workspace --- $catkin & ./src ..."
+    mkdir -p $catkin/src && cd $catkin 
+
+    echo
+    echo "* ------- "
+    echo "* download ros source codes ..."
+    echo
+
+    vcs import src < $shell_dir/../repos/$distribution.repos
+
+    case $distribution in
+        melodic)
+          # rosinstall_generator desktop --rosdistro $distribution --deps --tar > $distribution-desktop.rosinstall
+          # vcs import src < $distribution-desktop.rosinstall
+        ;;
+        noetic)
+          # rosinstall_generator desktop --rosdistro $distribution --deps --tar > $distribution-desktop.rosinstall
+          # vcs import --input $distribution.repos ./src
+        ;;
+        foxy | galactic | rolling)
+          # wget https://raw.githubusercontent.com/ros2/ros2/$distribution/ros2.repos
+          # vcs import src < $distribution.repos
+        ;;
+    esac
+}
+
+#-----------------------------------------------------------------------------------
+function patch_src {
+    echo
+    echo "* ------- "
+    echo "* patch ros source codes ..."
+    echo
+
+    case $distribution in
+        melodic | noetic)
+            ;;
+        foxy)
+            cp $shell_dir/../../PACKAGES/rviz_assimp_vendor-extras.cmake.in    $catkin/src/ros2/rviz/rviz_assimp_vendor/.
+            ;;
+    esac
+}
+
+#-----------------------------------------------------------------------------------
+function ros_init {
+    sudo rm -rf /etc/ros/rosdep/sources.list.d/20-default.list
+    sudo rosdep init
+    rosdep update
+
+    if [[ $os == "Linux" ]]; then
+        case $distribution in
+            melodic | noetic)
+                rosdep install --from-paths ./src --ignore-packages-from-source --rosdistro $distribution -y
+                ;;
+            foxy)
+                rosdep install --from-paths src --ignore-src -y --skip-keys "fastcdr rti-connext-dds-5.3.1 urdfdom_headers"
+                ;;
+        esac
+    fi
+}
+
+#-----------------------------------------------------------------------------------
+# Note: due to an unresolved issue with SIP, Qt@5, and PyQt5,
+# we need to disable python_qt_binding to have the build succeed.
+# This will be removed when the issue is resolved, see:
+#    https://github.com/ros-visualization/python_qt_binding/issues/103
+# REASON: both Linux and MAC, sip new version could NOT include sipconfig.py.
+
+function build_src {
+    cd $bipath
+    rm -rf ./src
+    ln -s $catkin/src .
+
+    export build_base=$bipath/build
+    export install_base=$bipath/install
+    export devel_base=$bipath/devel
+
+    # mkdir -p $build_base
+    # mkdir -p $install_base
+    # if [[ $distribution == "noetic" ]]; then
+    #     mkdir -p $devel_base
+    # fi
+
+    if [[ $os == "Linux" ]]; then
+#               --packages-skip-by-dep python_qt_binding              \
+        colcon_comp () {
+            opt1="--log-base /dev/null                                \
+                  build                                               \
+                  --symlink-install                                   \
+                  --build-base   $build_base                          \
+                  --install-base $install_base                        \
+                  --event-handlers console_direct+                    "
+            
+            opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                \
+                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" \
+                               -DCMAKE_SHARED_LINKER_FLAGS=$LDFLAGS   "
+
+            colcon $opt1 $@ $opt2
+        }
+
+        catkin_comp () {
+            opt1="-DCMAKE_BUILD_TYPE=Release                          \
+                  -DPYTHON_EXECUTABLE=$rosenv/bin/python3             "
+
+            opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                \
+                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" "
+
+            if [[ $1 == "current" ]]; then
+                shift
+                ./src/catkin/bin/catkin_make          $opt1 $@ $opt2
+            elif [[ $1 == "isolated" ]]; then
+                shift
+                ./src/catkin/bin/catkin_make_isolated $opt1 $@ $opt2
+            fi
+        }
+
+    elif [[ $os == "Darwin" ]]; then
+        colcon_comp () {
+            opt1="--log-base /dev/null                                \
+                  build                                               \
+                  --symlink-install                                   \
+                  --build-base   $build_base                          \
+                  --install-base $install_base                        \
+                  --event-handlers console_direct+                    "
+            
+            opt2="--cmake-args -DCMAKE_CXX_STANDARD=17                \
+                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" "
+
+            colcon $opt1 $@ $opt2
+        }
+
+        catkin_comp () {
+            opt1="-DCMAKE_BUILD_TYPE=Release                          \
+                  -DPYTHON_EXECUTABLE=$rosenv/bin/python3             "
+
+            opt2="--cmake-args -DCMAKE_CXX_STANDARD=17                "   
+#                              -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" "
+
+            if [[ $1 == "current" ]]; then
+                shift
+                ./src/catkin/bin/catkin_make          $opt1 $@ $opt2
+            elif [[ $1 == "isolated" ]]; then
+                shift
+                ./src/catkin/bin/catkin_make_isolated --install $opt1 $@ $opt2
+            fi
+        }
+    fi
+
+    case $package in
+        all)
+            if [[ $distribution == "foxy" ]]; then
+                colcon_comp
+            elif [[ $distribution == "melodic" || $distribution == "noetic" ]]; then
+#               catkin_comp current   -DCATKIN_WHITELIST_PACKAGES=""
+                catkin_comp isolated  -DCATKIN_WHITELIST_PACKAGES=""
+            fi
+            ;;
+        *)
+            echo "now compiling $package ... "
+            echo
+            if [[ $distribution == "foxy" ]]; then
+                colcon_comp --packages-select $package
+            elif [[ $distribution == "melodic" || $distribution == "noetic" ]]; then
+#               catkin_comp current   -DCATKIN_WHITELIST_PACKAGES="$package"
+                catkin_comp isolated  --pkg=$package
+            fi
+            ;;
+    esac
+}
+
+#-----------------------------------------------------------------------------------
+# main function
+
+set -e
+
+print_welcome
+
+if [[ $step == "all" || $step == "auxilary" ]]; then
+    set_auxilary
+fi
+
+if [[ $step == "all" || $step == "getsrc" ]]; then
+    get_code
+    patch_src
+    ros_init
+fi
+
+if [[ $step == "all" || $step == "compile" ]]; then
+    set_compiler
+    set_env
+    build_src
+fi

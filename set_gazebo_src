@@ -1,0 +1,173 @@
+#!/usr/bin/env  zsh
+
+# NOT FINISHED!!!
+#-----------------------------------------------------------------------------------
+# This script is to install gazebo from source
+#
+# Author: Hao Feng (F1)
+# Date:   Dec. 21, 2021
+#
+# Copyright (c) 2021, FATAVAY CO., LTD.
+#-----------------------------------------------------------------------------------
+
+export os=`uname`
+export home=/Users/fengh
+export distribution_default=foxy
+export shell_dir=$(cd "$(dirname "$0")";pwd)
+export compiler_default=clang
+export package_default=all
+
+#-----------------------------------------------------------------------------------
+function print_welcome {
+    echo
+    echo "* ----------------------------------------------------------------- "
+    echo "* This script is to install gazebo from source ... "
+
+    echo
+    echo "* ------- "
+    echo "* specify ros distribution name ... "
+    echo
+    echo  "         ROS1: melodic/noetic "
+    echo  "         ROS2: foxy/galactic/rolling "
+    echo
+    echo -n " * Please input ros name, [$distribution_default]: "
+    read distribution
+    if [[ $distribution == "" ]]; then export distribution=$distribution_default; fi
+
+    echo
+    echo "* ------- "
+    echo "* specify compilers ... "
+    echo
+    echo -n "* Please input compilers: clang/gnu/intel, [$compiler_default]: "
+    read compiler
+    if [[ $compiler == "" ]]; then export compiler=$compiler_default; fi
+
+    catkin_default=$home/Research/ROS/gazebo
+    echo
+    echo "* ------- "
+    echo "* specify ros working directory ... "
+    echo
+    echo -n "* Please input the working gazebo directory, [$catkin_default]: "
+    read catkin
+    if [[ $catkin == "" ]]; then export catkin=$catkin_default; fi
+    export bipath=/opt/ros/gazebo_src
+    echo "The build & install base is: $bipath"
+    echo
+
+    echo
+    echo "* ------- "
+    echo "* specify package to be compiled ..."
+    echo
+    echo -n "* Please input package name, [$package_default]: "
+    read package
+    if [[ $package == "" ]]; then export package=$package_default; fi
+}
+
+#-----------------------------------------------------------------------------------
+function set_compiler {
+        case $compiler in
+        gnu)
+            export CC=gcc-11
+            export CXX=g++-11
+            ;;
+        intel)
+            export CC=icc
+            export CXX=icpc
+            ;;
+        clang)
+            export CC=clang
+            export CXX=clang++
+            ;;
+    esac
+
+    echo
+    echo "* ------ "
+    echo "* compilers are: "
+    echo "     - C compiler:        $CC"
+    echo "     - CXX compiler:      $CXX"
+    echo
+}
+
+#-----------------------------------------------------------------------------------
+function get_code {
+    echo
+    echo "* ------- "
+    echo
+    echo "* create catkin workspace --- $catkin & ./src ..."
+    mkdir -p $catkin/src && cd $catkin
+
+    echo
+    echo "* ------- "
+    echo "* download ros source codes ..."
+    echo
+
+    cp $shell_dir/gazebo_ros.repos .
+    vcs import src < gazebo_ros.repos
+
+    # cd src
+    # git clone https://github.com/ros-simulation/gazebo_ros_pkgs.git -b ros2
+}
+
+#-----------------------------------------------------------------------------------
+function set_env {
+    if [[ $os == "Darwin" ]]; then
+        source ~/Init/brew.x86
+    fi
+
+    source ~/Init/$distribution
+    
+    case $os in
+        Darwin)
+            arch -x86_64 /usr/local/bin/brew install boost-python3
+            export OPENSSL_ROOT_DIR=$(brew --prefix openssl)
+            ;;
+        *)
+            ;;
+    esac
+
+    echo
+    echo "* ------ "
+    echo "* environments are: "
+    echo "     - OPENSSL_ROOT_DIR:  $OPENSSL_ROOT_DIR"
+    echo
+}
+
+#-----------------------------------------------------------------------------------
+function build_src {
+    cd $catkin
+
+    export build_base=$bipath/build
+    export install_base=$bipath/install
+    export log_base=$bipath/log
+
+    comp () {
+        colcon \
+            --log-base /dev/null     \
+            build --symlink-install  \
+            --build-base $build_base \
+            --install-base $install_base \
+            --event-handlers console_direct+ \
+            $@
+    }
+    
+    case $package in
+        all)
+            comp 
+            ;;
+        *)
+            echo "now compiling $package ... "
+            echo
+            comp --packages-select $package
+            ;;
+    esac
+}
+
+#-----------------------------------------------------------------------------------
+# main function
+
+print_welcome
+
+get_code
+set_compiler
+set_env
+build_src
