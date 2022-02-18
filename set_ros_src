@@ -742,6 +742,7 @@ function build_src {
 
 set -e
 
+source ~/Init/x86
 print_welcome
 
 if [[ $step == "all" || $step == "auxilary" ]]; then
