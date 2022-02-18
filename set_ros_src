@@ -178,7 +178,7 @@ function apt_tools {
             lib=(python-rosdep python-rosinstall-generator python-vcstool python-rosinstall build-essential liblog4cxx-dev)
             ;;
         noetic)
-            lib=(build-essential liborocos-kdl-dev libogre-1.12 liblog4cxx-dev)
+            lib=(build-essential liborocos-kdl-dev libogre-1.12 liblog4cxx-dev libgpgme-dev) 
             ;;
         foxy)
             lib=(build-essential \
