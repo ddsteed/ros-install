@@ -16,7 +16,7 @@ export rosbin=/opt/ros
 
 export distribution_default=noetic
 export run_default=install
-export rosenv_default=pipenv
+export rosenv_default=envtools
 export step_default=compile
 export compiler_default=clang
 export package_default=all
@@ -120,7 +120,7 @@ function set_auxilary {
 
     pip_stuff
 
-    src_stuff
+    tools_src_stuff
 }
 
 #-----------------------------------------------------------------------------------
@@ -175,10 +175,10 @@ function add_apt_repository {
 function apt_tools {
     case $distribution in
         melodic)
-            lib=(python-rosdep python-rosinstall-generator python-vcstool python-rosinstall build-essential)
+            lib=(python-rosdep python-rosinstall-generator python-vcstool python-rosinstall build-essential liblog4cxx-dev)
             ;;
         noetic)
-            lib=(build-essential liborocos-kdl-dev)
+            lib=(build-essential liborocos-kdl-dev libogre-1.12 liblog4cxx-dev)
             ;;
         foxy)
             lib=(build-essential \
@@ -225,11 +225,11 @@ function brew_stuff {
     case $distribution in
         melodic)
             lib=(cmake sip pyqt5 graphviz qt@5)
-            lib=(${lib[@]} orocos-kdl boost boost-python3 urdfdom log4cxx)
+            lib=(${lib[@]} orocos-kdl boost boost-python3 log4cxx)
             ;;
         noetic)
             lib=(cmake sip pyqt5 graphviz qt@5)
-            lib=(${lib[@]} orocos-kdl boost boost-python3 urdfdom log4cxx)
+            lib=(${lib[@]} orocos-kdl boost boost-python3 gpgme log4cxx)
             ;;
         foxy)
             lib=(bullet cmake cppcheck eigen pcre poco tinyxml wget)
@@ -260,8 +260,7 @@ function pip_stuff {
         melodic | noetic)
             if [[ $os == "Darwin" ]]; then
                 lib=(rosdep rosinstall_generator vcstool \
-                            empy wheel \
-                    pygraphviz pydot)
+                            empy wheel pygraphviz pydot crypto)
             elif [[ $os == "Linux" ]]; then
                 lib=(rosdep rosinstall_generator vcstool \
                             empy)
@@ -310,7 +309,7 @@ function pip_stuff {
                 echo "      ----------------------------------------- "
                 echo
                 if [[ $app == pygraphviz ]]; then
-                    pip3 $run -U $app $opt
+                    pip3 $run $opt $app
                 else
                     pip3 $run -U $app
                 fi
@@ -332,27 +331,32 @@ function pip_stuff {
 }
 
 #-----------------------------------------------------------------------------------
-# some tools/libraries, like sip/PyQt could NOT be found if installed by brew/apt,
+# some tools/libraries, like sip/PyQt/urdfdom could NOT be found if installed by brew/apt,
 # so they have to be installed manually.
+#
+# sip/PyQt/urdfdom/OGRE
 
-function src_stuff {
+function tools_src_stuff {
     source $rosenv/bin/activate
-    mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
     # set versions
     vsip=4.19.13
     vpyqt=5.11.3
+    vurdfdom=master
+    vogre=13.3.0
 
     # install SIP first
     echo 
     echo "   - install sip manually ..."
     echo "     ----------- "
     echo
+    mkdir -p $rosenv/tmp && cd $rosenv/tmp
+
     if [[ ! `pip3 list | grep sip` ]]; then
         if [ ! -f "sip-$vsip.tar.gz" ]; then
             wget https://sourceforge.net/projects/pyqt/files/sip/sip-$vsip/sip-$vsip.tar.gz
         fi
-        cd $rosenv/tmp
+
         tar xzf sip-$vsip.tar.gz
         cd sip-$vsip
         python3 ./configure.py
@@ -371,12 +375,13 @@ function src_stuff {
     echo "   - install PyQt manually ..."
     echo "     ------------ "
     echo
+    mkdir -p $rosenv/tmp && cd $rosenv/tmp
+
     if [[ ! `pip3 list | grep PyQt` ]]; then
         if [ ! -f "PyQt5_gpl-$vpyqt.tar.gz" ]; then
             wget https://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-$vpyqt/PyQt5_gpl-$vpyqt.tar.gz
         fi
 
-        cd $rosenv/tmp
         tar xzf PyQt5_gpl-$vpyqt.tar.gz
         cd PyQt5_gpl-$vpyqt
 
@@ -397,6 +402,56 @@ function src_stuff {
     echo "     ----------------- "
     echo
     pip3 $run -U pyqt5.sip
+
+    # install urdfdom
+    echo 
+    echo "   - install urdfdom manually ..."
+    echo "     --------------- "
+    echo
+    mkdir -p $rosenv/tmp && cd $rosenv/tmp
+
+    if  [ ! -d "$rosenv/lib/urdfdom" ]; then
+        if [ ! -f "urdfdom-$vurdfdom.zip" ]; then
+            wget https://codeload.github.com/ros/urdfdom/zip/refs/heads/master -O urdfdom-master.zip
+        fi
+
+        unzip urdfdom-$vurdfdom.zip
+        cd urdfdom-$vurdfdom && mkdir -p build && cd build
+        cmake --install-prefix=$rosenv ..
+        make -j 8
+        make install
+
+        cd ../.. && rm -rf urdfdom-$vurdfdom
+    else
+        echo
+        echo "     - urdfdom has been installed."
+        echo
+    fi
+
+    # install OGRE
+    echo 
+    echo "   - install OGRE manually ..."
+    echo "     ------------ "
+    echo
+    mkdir -p $rosenv/tmp && cd $rosenv/tmp
+
+    if  [ ! -d "$rosenv/lib/OGRE" ]; then
+        if [ ! -f "ogre-$vogre.zip" ]; then
+            wget https://codeload.github.com/OGRECave/ogre/zip/refs/tags/v$vogre -O ogre-$vogre.zip
+        fi
+
+        unzip ogre-$vogre.zip
+        cd ogre-$vogre && mkdir -p build && cd build
+        cmake --install-prefix=$rosenv ..
+        make -j 8
+        make install
+
+        cd ../.. && rm -rf ogre-$vogre
+    else
+        echo
+        echo "     - OGRE has been installed."
+        echo
+    fi
 }
 
 #-----------------------------------------------------------------------------------
@@ -431,16 +486,28 @@ function set_env {
             if [[ $os == "Darwin" ]]; then
                 source ~/Init/x86
 
-                export CPPFLAGS="-fno-delete-null-pointer-checks"
-                export CPPFLAGS="-I$(brew --prefix qt@5)/include $CPPFLAGS"
-                export CPPFLAGS="-I$(brew --prefix log4cxx)/include $CPPFLAGS"
+                export OPENSSL_ROOT_DIR=$(brew --prefix openssl)
+                export CMAKE_PREFIX_PATH="$(brew --prefix openssl):$CMAKE_PREFIX_PATH"
+
+                export LDFLAGS="-L$(brew --prefix qt@5)/lib $LDFLAGS"
+                export CPPFLAGS="-I$(brew --prefix qt@5)/include"
+                export CMAKE_CXX_FLAGS=$CPPFLAGS
+                export CMAKE_PREFIX_PATH="$(brew --prefix qt@5):$CMAKE_PREFIX_PATH"
+                export PATH="$(brew --prefix qt@5)/bin:$PATH"
+
+                export CPPFLAGS="-I$(brew --prefix opencv)/include/opencv4"
+                export CMAKE_CXX_FLAGS=$CPPFLAGS
+                export CMAKE_PREFIX_PATH="$(brew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
+                export PATH="$(brew --prefix opencv)/bin:$PATH"
 
                 export CMAKE_PREFIX_PATH="$(brew --prefix eigen):$CMAKE_PREFIX_PATH"
                 export CMAKE_PREFIX_PATH="$(brew --prefix eigen)/include/eigen3:$CMAKE_PREFIX_PATH"
-                export CMAKE_PREFIX_PATH="$(brew --prefix log4cxx):$CMAKE_PREFIX_PATH"
-                export CMAKE_PREFIX_PATH="$(brew --prefix qt@5):$CMAKE_PREFIX_PATH"
 
-                export PATH="$(brew --prefix qt@5)/bin:$PATH"
+                export CMAKE_PREFIX_PATH="$(brew --prefix boost):$CMAKE_PREFIX_PATH"
+                export CMAKE_PREFIX_PATH="$(brew --prefix boost)/include:$CMAKE_PREFIX_PATH"
+
+                export CMAKE_PREFIX_PATH="$rosenv:$CMAKE_PREFIX_PATH"
+                export PATH="$rosenv/bin:$PATH"
 
             elif [[ $os == "Linux" ]]; then
                 export CMAKE_PREFIX_PATH="/usr/include/eigen3:$CMAKE_PREFIX_PATH"
@@ -463,6 +530,7 @@ function set_env {
                 # add the Qt directory to the PATH and CMAKE_PREFIX_PATH
                 export LDFLAGS="-L$(brew --prefix qt@5)/lib $LDFLAGS"
                 export CPPFLAGS="-I$(brew --prefix qt@5)/include -I$(brew --prefix opencv)/include/opencv4"
+                export CMAKE_CXX_FLAGS=$CPPFLAGS
 
                 export CMAKE_PREFIX_PATH="$(brew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
                 export CMAKE_PREFIX_PATH="$(brew --prefix qt@5):$CMAKE_PREFIX_PATH"
@@ -597,11 +665,13 @@ function build_src {
         }
 
         catkin_comp () {
-            opt1="-DCMAKE_BUILD_TYPE=Release                          \
-                  -DPYTHON_EXECUTABLE=$rosenv/bin/python3             "
+            opt1="-DCMAKE_BUILD_TYPE=Release                            \
+                  -DPYTHON_EXECUTABLE=$rosenv/bin/python3               "
 
-            opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                \
-                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" "
+            opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                  \
+                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" \
+                               -DCMAKE_INCLUDE_PATH="$CMAKE_INCLUDE_PATH" \
+                               -DCMAKE_SHARED_LINKER_FLAGS=$LDFLAGS     "
 
             if [[ $1 == "current" ]]; then
                 shift
@@ -628,11 +698,12 @@ function build_src {
         }
 
         catkin_comp () {
-            opt1="-DCMAKE_BUILD_TYPE=Release                          \
-                  -DPYTHON_EXECUTABLE=$rosenv/bin/python3             "
+            opt1="-DCMAKE_BUILD_TYPE=Release                            \
+                  -DPYTHON_EXECUTABLE=$rosenv/bin/python3               "
 
-            opt2="--cmake-args -DCMAKE_CXX_STANDARD=17                "   
-#                              -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" "
+            opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                  \
+                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" \
+                               -DCMAKE_SHARED_LINKER_FLAGS=$LDFLAGS     "
 
             if [[ $1 == "current" ]]; then
                 shift
