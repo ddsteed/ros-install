@@ -260,10 +260,10 @@ function pip_stuff {
         melodic | noetic)
             if [[ $os == "Darwin" ]]; then
                 lib=(rosdep rosinstall_generator vcstool \
-                            empy wheel pygraphviz pydot crypto)
+                            empy wheel pygraphviz pydot crypto numpy)
             elif [[ $os == "Linux" ]]; then
                 lib=(rosdep rosinstall_generator vcstool \
-                            empy)
+                            empy numpy)
             fi
             ;;
         foxy)
