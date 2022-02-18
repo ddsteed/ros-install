@@ -210,7 +210,6 @@ function apt_tools {
 
 #-----------------------------------------------------------------------------------
 function brew_tools {
-    source ~/Init/x86
     echo
     echo "* ------ "
     echo "* brew $run some stuff ... "
@@ -224,7 +223,7 @@ function brew_tools {
     case $distribution in
         noetic)
             lib=(cmake sip pyqt5 graphviz qt@5)
-            lib=(${lib[@]} orocos-kdl boost boost-python3 gpgme log4cxx)
+            lib=(${lib[@]} orocos-kdl boost boost-python3 gpgme log4cxx openssl)
             ;;
         foxy)
             lib=(bullet cmake cppcheck eigen pcre poco tinyxml wget)
@@ -241,7 +240,7 @@ function brew_tools {
             ;;
     esac
     
-    arch -x86_64 /usr/local/bin/brew  $run ${lib[@]}  $opt1 $opt2
+    ibrew $run ${lib[@]}  $opt1 $opt2
 }
 
 #-----------------------------------------------------------------------------------
@@ -255,7 +254,7 @@ function pip_tools {
         noetic)
             if [[ $os == "Darwin" ]]; then
                 lib=(rosdep rosinstall_generator vcstool \
-                            empy wheel pygraphviz pydot crypto numpy)
+                            empy wheel pygraphviz pydot numpy)
             elif [[ $os == "Linux" ]]; then
                 lib=(rosdep rosinstall_generator vcstool \
                             empy numpy)
@@ -383,7 +382,7 @@ function src_tools {
                     tar xzf PyQt5_gpl-$vpyqt.tar.gz
                     cd PyQt5_gpl-$vpyqt
 
-                    export PATH="$(brew --prefix qt@5)/bin:$PATH"
+                    export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
                     yes yes | python3 ./configure.py --sip $rosenv/bin/sip 
                     make -j 8
                     make install
@@ -491,27 +490,28 @@ function set_env {
     case $distribution in
         noetic)
             if [[ $os == "Darwin" ]]; then
-                source ~/Init/x86
+                export OPENSSL_ROOT_DIR=$(ibrew --prefix openssl)
+                export CMAKE_PREFIX_PATH="$(ibrew --prefix openssl):$CMAKE_PREFIX_PATH"
+                export LDFLAGS="-L$(ibrew --prefix openssl)/lib $LDFLAGS"
+                export CPPFLAGS="-I$(ibrew --prefix openssl)/include $CPPFLAGS"
+                export PKG_CONFIG_PATH="$(ibrew --prefix openssl)/lib/pkgconfig"
 
-                export OPENSSL_ROOT_DIR=$(brew --prefix openssl)
-                export CMAKE_PREFIX_PATH="$(brew --prefix openssl):$CMAKE_PREFIX_PATH"
-
-                export LDFLAGS="-L$(brew --prefix qt@5)/lib $LDFLAGS"
-                export CPPFLAGS="-I$(brew --prefix qt@5)/include"
+                export LDFLAGS="-L$(ibrew --prefix qt@5)/lib $LDFLAGS"
+                export CPPFLAGS="-I$(ibrew --prefix qt@5)/include $CPPFLAGS"
                 export CMAKE_CXX_FLAGS=$CPPFLAGS
-                export CMAKE_PREFIX_PATH="$(brew --prefix qt@5):$CMAKE_PREFIX_PATH"
-                export PATH="$(brew --prefix qt@5)/bin:$PATH"
+                export CMAKE_PREFIX_PATH="$(ibrew --prefix qt@5):$CMAKE_PREFIX_PATH"
+                export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
 
-                export CPPFLAGS="-I$(brew --prefix opencv)/include/opencv4"
+                export CPPFLAGS="-I$(ibrew --prefix opencv)/include/opencv4 $CPPFLAGS"
                 export CMAKE_CXX_FLAGS=$CPPFLAGS
-                export CMAKE_PREFIX_PATH="$(brew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
-                export PATH="$(brew --prefix opencv)/bin:$PATH"
+                export CMAKE_PREFIX_PATH="$(ibrew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
+                export PATH="$(ibrew --prefix opencv)/bin:$PATH"
 
-                export CMAKE_PREFIX_PATH="$(brew --prefix eigen):$CMAKE_PREFIX_PATH"
-                export CMAKE_PREFIX_PATH="$(brew --prefix eigen)/include/eigen3:$CMAKE_PREFIX_PATH"
+                export CMAKE_PREFIX_PATH="$(ibrew --prefix eigen):$CMAKE_PREFIX_PATH"
+                export CMAKE_PREFIX_PATH="$(ibrew --prefix eigen)/include/eigen3:$CMAKE_PREFIX_PATH"
 
-                export CMAKE_PREFIX_PATH="$(brew --prefix boost):$CMAKE_PREFIX_PATH"
-                export CMAKE_PREFIX_PATH="$(brew --prefix boost)/include:$CMAKE_PREFIX_PATH"
+                export CMAKE_PREFIX_PATH="$(ibrew --prefix boost):$CMAKE_PREFIX_PATH"
+                export CMAKE_PREFIX_PATH="$(ibrew --prefix boost)/include:$CMAKE_PREFIX_PATH"
 
                 export CMAKE_PREFIX_PATH="$rosenv:$CMAKE_PREFIX_PATH"
                 export PATH="$rosenv/bin:$PATH"
@@ -523,26 +523,24 @@ function set_env {
 
         foxy)
             if [[ $os == "Darwin" ]]; then
-                source ~/Init/x86
 
                 # if you are using ZSH, then replace '.bashrc' with '.zshrc'
-                # echo "export OPENSSL_ROOT_DIR=$(brew --prefix openssl)" >> ~/.bashrc
-                export OPENSSL_ROOT_DIR=$(brew --prefix openssl)
+                export OPENSSL_ROOT_DIR=$(ibrew --prefix openssl)
 
                 # bison
                 export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:/usr/local/opt/bison
                 export PATH="/usr/local/opt/bison/bin:$PATH"
-                export LDFLAGS="-L$(brew --prefix bison)/lib $LDFLAGS"
+                export LDFLAGS="-L$(ibrew --prefix bison)/lib $LDFLAGS"
 
                 # add the Qt directory to the PATH and CMAKE_PREFIX_PATH
-                export LDFLAGS="-L$(brew --prefix qt@5)/lib $LDFLAGS"
-                export CPPFLAGS="-I$(brew --prefix qt@5)/include -I$(brew --prefix opencv)/include/opencv4"
+                export LDFLAGS="-L$(ibrew --prefix qt@5)/lib $LDFLAGS"
+                export CPPFLAGS="-I$(ibrew --prefix qt@5)/include -I$(ibrew --prefix opencv)/include/opencv4"
                 export CMAKE_CXX_FLAGS=$CPPFLAGS
 
-                export CMAKE_PREFIX_PATH="$(brew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
-                export CMAKE_PREFIX_PATH="$(brew --prefix qt@5):$CMAKE_PREFIX_PATH"
-                export PATH="$(brew --prefix qt@5)/bin:$PATH"
-                export PATH="$(brew --prefix opencv)/bin:$PATH"
+                export CMAKE_PREFIX_PATH="$(ibrew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
+                export CMAKE_PREFIX_PATH="$(ibrew --prefix qt@5):$CMAKE_PREFIX_PATH"
+                export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
+                export PATH="$(ibrew --prefix opencv)/bin:$PATH"
 
             elif [[ $os == "Linux" ]]; then
                 export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:/usr/include/eigen3"
@@ -653,28 +651,32 @@ function build_src {
     if [[ $os == "Linux" ]]; then
 #               --packages-skip-by-dep python_qt_binding              \
         colcon_comp () {
-            opt1="--log-base /dev/null                                \
-                  build                                               \
-                  --symlink-install                                   \
-                  --build-base   $build_base                          \
-                  --install-base $install_base                        \
-                  --event-handlers console_direct+                    "
+            opt1="--log-base /dev/null                                    \
+                  build                                                   \
+                  --symlink-install                                       \
+                  --build-base   $build_base                              \
+                  --install-base $install_base                            \
+                  --event-handlers console_direct+                        "
             
-            opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                \
-                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" \
-                               -DCMAKE_SHARED_LINKER_FLAGS=$LDFLAGS   "
+            opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                    \
+                               -DCMAKE_C_COMPILER=$CC                     \
+                               -DCMAKE_CXX_COMPILER=$CXX                  \
+                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   \
+                               -DCMAKE_SHARED_LINKER_FLAGS=$LDFLAGS       "
 
             colcon $opt1 $@ $opt2
         }
 
         catkin_comp () {
-            opt1="-DCMAKE_BUILD_TYPE=Release                            \
-                  -DPYTHON_EXECUTABLE=$rosenv/bin/python3               "
+            opt1="-DCMAKE_BUILD_TYPE=Release                              \
+                  -DPYTHON_EXECUTABLE=$rosenv/bin/python3                 "
 
-            opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                  \
-                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" \
+            opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                    \
+                               -DCMAKE_C_COMPILER=$CC                     \
+                               -DCMAKE_CXX_COMPILER=$CXX                  \
+                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   \
                                -DCMAKE_INCLUDE_PATH="$CMAKE_INCLUDE_PATH" \
-                               -DCMAKE_SHARED_LINKER_FLAGS=$LDFLAGS     "
+                               -DCMAKE_SHARED_LINKER_FLAGS=$LDFLAGS       "
 
             if [[ $1 == "current" ]]; then
                 shift
@@ -687,26 +689,30 @@ function build_src {
 
     elif [[ $os == "Darwin" ]]; then
         colcon_comp () {
-            opt1="--log-base /dev/null                                \
-                  build                                               \
-                  --symlink-install                                   \
-                  --build-base   $build_base                          \
-                  --install-base $install_base                        \
-                  --event-handlers console_direct+                    "
+            opt1="--log-base /dev/null                                    \
+                  build                                                   \
+                  --symlink-install                                       \
+                  --build-base   $build_base                              \
+                  --install-base $install_base                            \
+                  --event-handlers console_direct+                        "
             
-            opt2="--cmake-args -DCMAKE_CXX_STANDARD=17                \
-                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" "
+            opt2="--cmake-args -DCMAKE_CXX_STANDARD=17                    \
+                               -DCMAKE_C_COMPILER=$CC                     \
+                               -DCMAKE_CXX_COMPILER=$CXX                  \
+                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   "
 
             colcon $opt1 $@ $opt2
         }
 
         catkin_comp () {
-            opt1="-DCMAKE_BUILD_TYPE=Release                            \
-                  -DPYTHON_EXECUTABLE=$rosenv/bin/python3               "
+            opt1="-DCMAKE_BUILD_TYPE=Release                              \
+                  -DPYTHON_EXECUTABLE=$rosenv/bin/python3                 "
 
-            opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                  \
-                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" \
-                               -DCMAKE_SHARED_LINKER_FLAGS=$LDFLAGS     "
+            opt2="--cmake-args -DCMAKE_CXX_STANDARD=17                    \
+                               -DCMAKE_C_COMPILER=$CC                     \
+                               -DCMAKE_CXX_COMPILER=$CXX                  \
+                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   \
+                               -DCMAKE_SHARED_LINKER_FLAGS=$LDFLAGS       "
 
             if [[ $1 == "current" ]]; then
                 shift
@@ -745,7 +751,13 @@ function build_src {
 
 set -e
 
-source ~/Init/x86
+os=`uname`
+if [[ $os == "Darwin" ]]; then
+    ibrew () {
+        arch -x86_64 /usr/local/bin/brew $@
+    }
+fi
+
 print_welcome
 
 if [[ $step == "all" || $step == "auxilary" ]]; then
