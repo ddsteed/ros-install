@@ -36,7 +36,7 @@ function print_welcome {
     echo "* ------- "
     echo "* specify ros distribution name ... "
     echo
-    echo  "         ROS1: noetic/melodic "
+    echo  "         ROS1: noetic "
     echo  "         ROS2: foxy "
     echo
     echo -n " * Please input ros name, [$distribution_default]: "
@@ -109,18 +109,20 @@ function print_welcome {
 function set_auxilary {
     case $os in
         Darwin)
-            brew_stuff
+            brew_tools
+
+            pip_tools
+            src_tools sip pyqt urdfdom ogre
             ;;
         Linux)
             set_locale
             add_apt_repository
             apt_tools
+
+            pip_tools
+            src_tools 
             ;;
     esac
-
-    pip_stuff
-
-    tools_src_stuff
 }
 
 #-----------------------------------------------------------------------------------
@@ -131,7 +133,7 @@ function set_locale {
     echo
 
     case $distribution in
-        noetic | melodic)
+        noetic)
             ;;
         foxy)
             locale  # check for UTF-8
@@ -154,7 +156,7 @@ function add_apt_repository {
     echo
 
     case $distribution in
-        noetic | melodic)
+        noetic)
             ;;
         foxy)
             sudo apt install software-properties-common
@@ -174,11 +176,8 @@ function add_apt_repository {
 #-----------------------------------------------------------------------------------
 function apt_tools {
     case $distribution in
-        melodic)
-            lib=(python-rosdep python-rosinstall-generator python-vcstool python-rosinstall build-essential liblog4cxx-dev)
-            ;;
         noetic)
-            lib=(build-essential liborocos-kdl-dev libogre-1.12 liblog4cxx-dev libgpgme-dev) 
+            lib=(build-essential liborocos-kdl-dev libogre-1.12 liblog4cxx-dev libgpgme-dev liburdfdom-dev) 
             ;;
         foxy)
             lib=(build-essential \
@@ -210,7 +209,7 @@ function apt_tools {
 }
 
 #-----------------------------------------------------------------------------------
-function brew_stuff {
+function brew_tools {
     source ~/Init/x86
     echo
     echo "* ------ "
@@ -223,10 +222,6 @@ function brew_stuff {
     fi
 
     case $distribution in
-        melodic)
-            lib=(cmake sip pyqt5 graphviz qt@5)
-            lib=(${lib[@]} orocos-kdl boost boost-python3 log4cxx)
-            ;;
         noetic)
             lib=(cmake sip pyqt5 graphviz qt@5)
             lib=(${lib[@]} orocos-kdl boost boost-python3 gpgme log4cxx)
@@ -250,14 +245,14 @@ function brew_stuff {
 }
 
 #-----------------------------------------------------------------------------------
-function pip_stuff {
+function pip_tools {
     echo
     echo "* ------- "
     echo "* pip $run some stuff ... "
     echo
 
     case $distribution in
-        melodic | noetic)
+        noetic)
             if [[ $os == "Darwin" ]]; then
                 lib=(rosdep rosinstall_generator vcstool \
                             empy wheel pygraphviz pydot crypto numpy)
@@ -336,7 +331,7 @@ function pip_stuff {
 #
 # sip/PyQt/urdfdom/OGRE
 
-function tools_src_stuff {
+function src_tools {
     source $rosenv/bin/activate
 
     # set versions
@@ -345,113 +340,125 @@ function tools_src_stuff {
     vurdfdom=master
     vogre=13.3.0
 
-    # install SIP first
-    echo 
-    echo "   - install sip manually ..."
-    echo "     ----------- "
-    echo
-    mkdir -p $rosenv/tmp && cd $rosenv/tmp
+    for app in $@; do
+        case $app in
+            sip)
+                # install SIP first
+                echo 
+                echo "   - install sip manually ..."
+                echo "     ----------- "
+                echo
+                mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
-    if [[ ! `pip3 list | grep sip` ]]; then
-        if [ ! -f "sip-$vsip.tar.gz" ]; then
-            wget https://sourceforge.net/projects/pyqt/files/sip/sip-$vsip/sip-$vsip.tar.gz
-        fi
+                if [[ ! `pip3 list | grep sip` ]]; then
+                    if [ ! -f "sip-$vsip.tar.gz" ]; then
+                        wget https://sourceforge.net/projects/pyqt/files/sip/sip-$vsip/sip-$vsip.tar.gz
+                    fi
 
-        tar xzf sip-$vsip.tar.gz
-        cd sip-$vsip
-        python3 ./configure.py
-        make
-        make install
-        cd .. && rm -rf sip-$vsip
-    else
-        echo
-        echo "     - sip has been installed."
-        echo
-    fi
-    
+                    tar xzf sip-$vsip.tar.gz
+                    cd sip-$vsip
+                    python3 ./configure.py
+                    make
+                    make install
+                    cd .. && rm -rf sip-$vsip
+                else
+                    echo
+                    echo "     - sip has been installed."
+                    echo
+                fi
+                ;;
+            pyqt)
+                # install pyqt
+                echo 
+                echo "   - install PyQt manually ..."
+                echo "     ------------ "
+                echo
+                mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
-    # install pyqt
-    echo 
-    echo "   - install PyQt manually ..."
-    echo "     ------------ "
-    echo
-    mkdir -p $rosenv/tmp && cd $rosenv/tmp
+                if [[ ! `pip3 list | grep PyQt` ]]; then
+                    if [ ! -f "PyQt5_gpl-$vpyqt.tar.gz" ]; then
+                        wget https://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-$vpyqt/PyQt5_gpl-$vpyqt.tar.gz
+                    fi
 
-    if [[ ! `pip3 list | grep PyQt` ]]; then
-        if [ ! -f "PyQt5_gpl-$vpyqt.tar.gz" ]; then
-            wget https://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-$vpyqt/PyQt5_gpl-$vpyqt.tar.gz
-        fi
+                    tar xzf PyQt5_gpl-$vpyqt.tar.gz
+                    cd PyQt5_gpl-$vpyqt
 
-        tar xzf PyQt5_gpl-$vpyqt.tar.gz
-        cd PyQt5_gpl-$vpyqt
+                    export PATH="$(brew --prefix qt@5)/bin:$PATH"
+                    yes yes | python3 ./configure.py --sip $rosenv/bin/sip 
+                    make -j 8
+                    make install
+                    cd .. && rm -rf PyQt5_gpl-$vpyqt
+                else
+                    echo
+                    echo "     - PyQt has been installed."
+                    echo
+                fi
 
-        export PATH="$(brew --prefix qt@5)/bin:$PATH"
-        yes yes | python3 ./configure.py --sip $rosenv/bin/sip 
-        make -j 8
-        make install
-        cd .. && rm -rf PyQt5_gpl-$vpyqt
-    else
-        echo
-        echo "     - PyQt has been installed."
-        echo
-    fi
+                # ROS 2 needs pyqt5.sip module
+                echo 
+                echo "   - install pyqt5.sip module ..."
+                echo "     ----------------- "
+                echo
+                pip3 $run -U pyqt5.sip
+                ;;
+            urdfdom)
+                # install urdfdom
+                echo 
+                echo "   - install urdfdom manually ..."
+                echo "     --------------- "
+                echo
+                mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
-    # ROS 2 needs pyqt5.sip module
-    echo 
-    echo "   - install pyqt5.sip module ..."
-    echo "     ----------------- "
-    echo
-    pip3 $run -U pyqt5.sip
+                if  [ ! -d "$rosenv/lib/urdfdom" ]; then
+                    if [ ! -f "urdfdom-$vurdfdom.zip" ]; then
+                        wget https://codeload.github.com/ros/urdfdom/zip/refs/heads/master -O urdfdom-master.zip
+                    fi
 
-    # install urdfdom
-    echo 
-    echo "   - install urdfdom manually ..."
-    echo "     --------------- "
-    echo
-    mkdir -p $rosenv/tmp && cd $rosenv/tmp
+                    unzip urdfdom-$vurdfdom.zip
+                    cd urdfdom-$vurdfdom && mkdir -p build && cd build
+                    cmake --install-prefix=$rosenv ..
+                    make -j 8
+                    make install
 
-    if  [ ! -d "$rosenv/lib/urdfdom" ]; then
-        if [ ! -f "urdfdom-$vurdfdom.zip" ]; then
-            wget https://codeload.github.com/ros/urdfdom/zip/refs/heads/master -O urdfdom-master.zip
-        fi
+                    cd ../.. && rm -rf urdfdom-$vurdfdom
+                else
+                    echo
+                    echo "     - urdfdom has been installed."
+                    echo
+                fi
+                ;;
+            ogre)
+                # install OGRE
+                echo 
+                echo "   - install OGRE manually ..."
+                echo "     ------------ "
+                echo
+                mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
-        unzip urdfdom-$vurdfdom.zip
-        cd urdfdom-$vurdfdom && mkdir -p build && cd build
-        cmake --install-prefix=$rosenv ..
-        make -j 8
-        make install
+                if  [ ! -d "$rosenv/lib/OGRE" ]; then
+                    if [ ! -f "ogre-$vogre.zip" ]; then
+                        wget https://codeload.github.com/OGRECave/ogre/zip/refs/tags/v$vogre -O ogre-$vogre.zip
+                    fi
 
-        cd ../.. && rm -rf urdfdom-$vurdfdom
-    else
-        echo
-        echo "     - urdfdom has been installed."
-        echo
-    fi
+                    unzip ogre-$vogre.zip
+                    cd ogre-$vogre && mkdir -p build && cd build
+                    cmake --install-prefix=$rosenv ..
+                    make -j 8
+                    make install
 
-    # install OGRE
-    echo 
-    echo "   - install OGRE manually ..."
-    echo "     ------------ "
-    echo
-    mkdir -p $rosenv/tmp && cd $rosenv/tmp
-
-    if  [ ! -d "$rosenv/lib/OGRE" ]; then
-        if [ ! -f "ogre-$vogre.zip" ]; then
-            wget https://codeload.github.com/OGRECave/ogre/zip/refs/tags/v$vogre -O ogre-$vogre.zip
-        fi
-
-        unzip ogre-$vogre.zip
-        cd ogre-$vogre && mkdir -p build && cd build
-        cmake --install-prefix=$rosenv ..
-        make -j 8
-        make install
-
-        cd ../.. && rm -rf ogre-$vogre
-    else
-        echo
-        echo "     - OGRE has been installed."
-        echo
-    fi
+                    cd ../.. && rm -rf ogre-$vogre
+                else
+                    echo
+                    echo "     - OGRE has been installed."
+                    echo
+                fi
+                ;;
+            *)
+                echo " $app is NOT set to be installed manually!"
+                echo
+                ;;
+        esac
+    done
 }
 
 #-----------------------------------------------------------------------------------
@@ -482,7 +489,7 @@ function set_compiler {
 #-----------------------------------------------------------------------------------
 function set_env {
     case $distribution in
-        melodic | noetic)
+        noetic)
             if [[ $os == "Darwin" ]]; then
                 source ~/Init/x86
 
@@ -576,10 +583,6 @@ function get_code {
     vcs import src < $shell_dir/../repos/$distribution.repos
 
     case $distribution in
-        melodic)
-          # rosinstall_generator desktop --rosdistro $distribution --deps --tar > $distribution-desktop.rosinstall
-          # vcs import src < $distribution-desktop.rosinstall
-        ;;
         noetic)
           # rosinstall_generator desktop --rosdistro $distribution --deps --tar > $distribution-desktop.rosinstall
           # vcs import --input $distribution.repos ./src
@@ -599,7 +602,7 @@ function patch_src {
     echo
 
     case $distribution in
-        melodic | noetic)
+        noetic)
             ;;
         foxy)
             cp $shell_dir/../../PACKAGES/rviz_assimp_vendor-extras.cmake.in    $catkin/src/ros2/rviz/rviz_assimp_vendor/.
@@ -615,7 +618,7 @@ function ros_init {
 
     if [[ $os == "Linux" ]]; then
         case $distribution in
-            melodic | noetic)
+            noetic)
                 rosdep install --from-paths ./src --ignore-packages-from-source --rosdistro $distribution -y
                 ;;
             foxy)
@@ -719,7 +722,7 @@ function build_src {
         all)
             if [[ $distribution == "foxy" ]]; then
                 colcon_comp
-            elif [[ $distribution == "melodic" || $distribution == "noetic" ]]; then
+            elif [[ $distribution == "noetic" ]]; then
                 catkin_comp current   -DCATKIN_WHITELIST_PACKAGES=""
 #               catkin_comp isolated  -DCATKIN_WHITELIST_PACKAGES=""
             fi
@@ -729,7 +732,7 @@ function build_src {
             echo
             if [[ $distribution == "foxy" ]]; then
                 colcon_comp --packages-select $package
-            elif [[ $distribution == "melodic" || $distribution == "noetic" ]]; then
+            elif [[ $distribution == "noetic" ]]; then
 #               catkin_comp current   -DCATKIN_WHITELIST_PACKAGES="$package"
                 catkin_comp isolated  --pkg=$package
             fi
