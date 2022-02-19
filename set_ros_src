@@ -491,9 +491,9 @@ function set_env {
         noetic)
             if [[ $os == "Darwin" ]]; then
                 export OPENSSL_ROOT_DIR=$(ibrew --prefix openssl)
-                export CMAKE_PREFIX_PATH="$(ibrew --prefix openssl):$CMAKE_PREFIX_PATH"
                 export LDFLAGS="-L$(ibrew --prefix openssl)/lib $LDFLAGS"
                 export CPPFLAGS="-I$(ibrew --prefix openssl)/include $CPPFLAGS"
+                export CMAKE_PREFIX_PATH="$(ibrew --prefix openssl):$CMAKE_PREFIX_PATH"
                 export PKG_CONFIG_PATH="$(ibrew --prefix openssl)/lib/pkgconfig"
 
                 export LDFLAGS="-L$(ibrew --prefix qt@5)/lib $LDFLAGS"
@@ -501,6 +501,12 @@ function set_env {
                 export CMAKE_CXX_FLAGS=$CPPFLAGS
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix qt@5):$CMAKE_PREFIX_PATH"
                 export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
+
+                export LDFLAGS="-L$(ibrew --prefix log4cxx)/lib $LDFLAGS"
+                export CPPFLAGS="-I$(ibrew --prefix log4cxx)/include $CPPFLAGS"
+                export CMAKE_CXX_FLAGS=$CPPFLAGS
+                export CMAKE_PREFIX_PATH="$(ibrew --prefix log4cxx):$CMAKE_PREFIX_PATH"
+                export PKG_CONFIG_PATH="$(ibrew --prefix log4cxx)/share/pkgconfig $PKG_CONFIG_PATH"
 
                 export CPPFLAGS="-I$(ibrew --prefix opencv)/include/opencv4 $CPPFLAGS"
                 export CMAKE_CXX_FLAGS=$CPPFLAGS
@@ -708,11 +714,11 @@ function build_src {
             opt1="-DCMAKE_BUILD_TYPE=Release                              \
                   -DPYTHON_EXECUTABLE=$rosenv/bin/python3                 "
 
-            opt2="--cmake-args -DCMAKE_CXX_STANDARD=17                    \
+            opt2="--cmake-args -DCMAKE_CXX_STANDARD=20                    \
                                -DCMAKE_C_COMPILER=$CC                     \
                                -DCMAKE_CXX_COMPILER=$CXX                  \
-                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   \
-                               -DCMAKE_SHARED_LINKER_FLAGS=$LDFLAGS       "
+                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   "
+
 
             if [[ $1 == "current" ]]; then
                 shift
@@ -730,7 +736,7 @@ function build_src {
                 colcon_comp
             elif [[ $distribution == "noetic" ]]; then
                 catkin_comp current   -DCATKIN_WHITELIST_PACKAGES=""
-#               catkin_comp isolated  -DCATKIN_WHITELIST_PACKAGES=""
+#               catkin_comp isolated  
             fi
             ;;
         *)
