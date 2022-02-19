@@ -665,8 +665,6 @@ function build_src {
                   --event-handlers console_direct+                        "
             
             opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                    \
-                               -DCMAKE_C_COMPILER=$CC                     \
-                               -DCMAKE_CXX_COMPILER=$CXX                  \
                                -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   \
                                -DCMAKE_SHARED_LINKER_FLAGS=$LDFLAGS       "
 
@@ -678,8 +676,6 @@ function build_src {
                   -DPYTHON_EXECUTABLE=$rosenv/bin/python3                 "
 
             opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                    \
-                               -DCMAKE_C_COMPILER=$CC                     \
-                               -DCMAKE_CXX_COMPILER=$CXX                  \
                                -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   \
                                -DCMAKE_INCLUDE_PATH="$CMAKE_INCLUDE_PATH" \
                                -DCMAKE_SHARED_LINKER_FLAGS=$LDFLAGS       "
