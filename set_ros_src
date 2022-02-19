@@ -703,8 +703,6 @@ function build_src {
                   --event-handlers console_direct+                        "
             
             opt2="--cmake-args -DCMAKE_CXX_STANDARD=17                    \
-                               -DCMAKE_C_COMPILER=$CC                     \
-                               -DCMAKE_CXX_COMPILER=$CXX                  \
                                -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   "
 
             colcon $opt1 $@ $opt2
@@ -715,8 +713,6 @@ function build_src {
                   -DPYTHON_EXECUTABLE=$rosenv/bin/python3                 "
 
             opt2="--cmake-args -DCMAKE_CXX_STANDARD=20                    \
-                               -DCMAKE_C_COMPILER=$CC                     \
-                               -DCMAKE_CXX_COMPILER=$CXX                  \
                                -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   "
 
 
