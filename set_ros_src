@@ -14,7 +14,7 @@
 export roshome=/Users/fengh/Research/ROS
 export rosbin=/opt/ros
 
-export distribution_default=noetic
+export distribution_default=melodic
 export run_default=install
 export rosenv_default=envtools
 export step_default=compile
@@ -36,7 +36,7 @@ function print_welcome {
     echo "* ------- "
     echo "* specify ros distribution name ... "
     echo
-    echo  "         ROS1: noetic "
+    echo  "         ROS1: noetic|melodic "
     echo  "         ROS2: foxy "
     echo
     echo -n " * Please input ros name, [$distribution_default]: "
@@ -133,7 +133,7 @@ function set_locale {
     echo
 
     case $distribution in
-        noetic)
+        melodic | noetic)
             ;;
         foxy)
             locale  # check for UTF-8
@@ -156,7 +156,7 @@ function add_apt_repository {
     echo
 
     case $distribution in
-        noetic)
+        melodic | noetic)
             ;;
         foxy)
             sudo apt install software-properties-common
@@ -176,8 +176,8 @@ function add_apt_repository {
 #-----------------------------------------------------------------------------------
 function apt_tools {
     case $distribution in
-        noetic)
-            lib=(build-essential liborocos-kdl-dev libogre-1.12 liblog4cxx-dev libgpgme-dev liburdfdom-dev) 
+        melodic | noetic)
+            lib=(python3-rosdep python3-rosinstall-generator python3-vcstool build-essential liborocos-kdl-dev libogre-1.12 liblog4cxx-dev libgpgme-dev liburdfdom-dev) 
             ;;
         foxy)
             lib=(build-essential \
@@ -221,7 +221,7 @@ function brew_tools {
     fi
 
     case $distribution in
-        noetic)
+        melodic | noetic)
             lib=(cmake sip pyqt5 graphviz qt@5)
             lib=(${lib[@]} orocos-kdl boost boost-python3 gpgme log4cxx openssl)
             ;;
@@ -251,7 +251,7 @@ function pip_tools {
     echo
 
     case $distribution in
-        noetic)
+        melodic | noetic)
             if [[ $os == "Darwin" ]]; then
                 lib=(rosdep rosinstall_generator vcstool \
                             empy wheel pygraphviz pydot numpy)
@@ -488,7 +488,7 @@ function set_compiler {
 #-----------------------------------------------------------------------------------
 function set_env {
     case $distribution in
-        noetic)
+        melodic | noetic)
             if [[ $os == "Darwin" ]]; then
                 export OPENSSL_ROOT_DIR=$(ibrew --prefix openssl)
                 export LDFLAGS="-L$(ibrew --prefix openssl)/lib $LDFLAGS"
@@ -577,19 +577,32 @@ function get_code {
     echo "* ------- "
     echo
     echo "* create catkin workspace --- $catkin & ./src ..."
-    mkdir -p $catkin/src && cd $catkin 
+    cd $catkin 
 
     echo
     echo "* ------- "
     echo "* download ros source codes ..."
     echo
 
-    vcs import src < $shell_dir/../repos/$distribution.repos
+    if [[ $1 == "" ]]; then
+        var=desktop
+    else
+        var=$1
+    fi
+
+    mkdir -p src_$var
+    rosinstall_generator $var --rosdistro $distribution --deps --tar > $distribution_$var.repos
+    vcs import src_$var < $shell_dir/../repos/$distribution_$var.repos
+
+    rm -rf ./src
+    ln -s src_$var src
 
     case $distribution in
-        noetic)
-          # rosinstall_generator desktop --rosdistro $distribution --deps --tar > $distribution-desktop.rosinstall
+        melodic | noetic)
+          # rosinstall_generator desktop --rosdistro $distribution --deps --tar > $distribution.repos
           # vcs import --input $distribution.repos ./src
+          # rosinstall_generator desktop_full --rosdistro $distribution --deps --tar > $distribution-full.repos
+          # vcs import --input $distribution-full.repos ./src
         ;;
         foxy | galactic | rolling)
           # wget https://raw.githubusercontent.com/ros2/ros2/$distribution/ros2.repos
@@ -606,7 +619,7 @@ function patch_src {
     echo
 
     case $distribution in
-        noetic)
+        melodic | noetic)
             ;;
         foxy)
             cp $shell_dir/../../PACKAGES/rviz_assimp_vendor-extras.cmake.in    $catkin/src/ros2/rviz/rviz_assimp_vendor/.
@@ -616,13 +629,14 @@ function patch_src {
 
 #-----------------------------------------------------------------------------------
 function ros_init {
-    sudo rm -rf /etc/ros/rosdep/sources.list.d/20-default.list
-    sudo rosdep init
+    if [ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then
+        sudo rosdep init
+    fi
     rosdep update
 
     if [[ $os == "Linux" ]]; then
         case $distribution in
-            noetic)
+            melodic | noetic)
                 rosdep install --from-paths ./src --ignore-packages-from-source --rosdistro $distribution -y
                 ;;
             foxy)
@@ -726,9 +740,9 @@ function build_src {
         all)
             if [[ $distribution == "foxy" ]]; then
                 colcon_comp
-            elif [[ $distribution == "noetic" ]]; then
-                catkin_comp current   -DCATKIN_WHITELIST_PACKAGES=""
-#               catkin_comp isolated  
+            elif [[ $distribution == "melodic" || $distribution == "noetic" ]]; then
+#               catkin_comp current   -DCATKIN_WHITELIST_PACKAGES=""
+                catkin_comp isolated  
             fi
             ;;
         *)
@@ -736,7 +750,7 @@ function build_src {
             echo
             if [[ $distribution == "foxy" ]]; then
                 colcon_comp --packages-select $package
-            elif [[ $distribution == "noetic" ]]; then
+            elif [[ $distribution == "melodic" || $distribution == "noetic" ]]; then
 #               catkin_comp current   -DCATKIN_WHITELIST_PACKAGES="$package"
                 catkin_comp isolated  --pkg=$package
             fi
