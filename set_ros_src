@@ -14,7 +14,7 @@
 export roshome=/Users/fengh/Research/ROS
 export rosbin=/opt/ros
 
-export distribution_default=melodic
+export distribution_default=noetic
 export run_default=install
 export rosenv_default=envtools
 export step_default=compile
@@ -591,8 +591,8 @@ function get_code {
     fi
 
     mkdir -p src_$var
-    rosinstall_generator $var --rosdistro $distribution --deps --tar > $distribution_$var.repos
-    vcs import src_$var < $shell_dir/../repos/$distribution_$var.repos
+    rosinstall_generator $var --rosdistro $distribution --deps --tar > ${distribution}_$var.repos
+    vcs import src_$var < ${distribution}_$var.repos
 
     rm -rf ./src
     ln -s src_$var src
