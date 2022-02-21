@@ -573,24 +573,23 @@ function set_env {
 function get_code {
     source $rosenv/bin/activate
 
-    echo
-    echo "* ------- "
-    echo
-    echo "* create catkin workspace --- $catkin & ./src ..."
-    cd $catkin 
-
-    echo
-    echo "* ------- "
-    echo "* download ros source codes ..."
-    echo
-
     if [[ $1 == "" ]]; then
         var=desktop
     else
         var=$1
     fi
 
-    mkdir -p src_$var
+    echo
+    echo "* ------- "
+    echo
+    echo "* create catkin workspace --- $catkin & ./src_$var ..."
+    cd $catkin && mkdir -p src_$var
+
+    echo
+    echo "* ------- "
+    echo "* download ros_$var source codes ..."
+    echo
+
     rosinstall_generator $var --rosdistro $distribution --deps --tar > ${distribution}_$var.repos
     vcs import src_$var < ${distribution}_$var.repos
 
