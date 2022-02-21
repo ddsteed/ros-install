@@ -524,6 +524,13 @@ function set_env {
 
             elif [[ $os == "Linux" ]]; then
                 export CMAKE_PREFIX_PATH="/usr/include/eigen3:$CMAKE_PREFIX_PATH"
+                export CMAKE_PREFIX_PATH="$rosenv:$CMAKE_PREFIX_PATH"
+                export CMAKE_PREFIX_PATH="$catkin/src/catkin:$CMAKE_PREFIX_PATH"
+
+                export CMAKE_MODULE_PATH="$CMAKE_PREFIX_PATH"
+
+                export PATH="$rosenv/bin:$PATH"
+
             fi
             ;;
 
@@ -688,10 +695,7 @@ function build_src {
             opt1="-DCMAKE_BUILD_TYPE=Release                              \
                   -DPYTHON_EXECUTABLE=$rosenv/bin/python3                 "
 
-            opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                    \
-                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   \
-                               -DCMAKE_INCLUDE_PATH="$CMAKE_INCLUDE_PATH" \
-                               -DCMAKE_SHARED_LINKER_FLAGS=$LDFLAGS       "
+            opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                    "
 
             if [[ $1 == "current" ]]; then
                 shift
