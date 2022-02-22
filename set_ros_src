@@ -383,6 +383,7 @@ function src_tools {
 
                     if [[ `uname` == "Darwin" ]]; then
                         export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
+                        export PATH="/usr/local/homebrew/bin:/usr/local/homebrew/sbin${PATH+:$PATH}"
                     fi
                     
                     yes yes | python3 ./configure.py --sip $rosenv/bin/sip --destdir $rosenv
@@ -443,7 +444,13 @@ function src_tools {
 
                     unzip ogre-$vogre.zip
                     cd ogre-$vogre && mkdir -p build && cd build
-                    cmake --install-prefix=$rosenv ..
+
+                    if [[ `uname` == "Linux" ]]; then
+                        sudo apt-get install libxrandr-dev
+                        sudo apt-get install libxcursor-dev
+                    fi
+                    
+                    cmake -D CMAKE_INSTALL_PREFIX=$rosenv ..
                     make -j 8
                     make install
 
