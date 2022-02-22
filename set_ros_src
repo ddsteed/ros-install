@@ -120,7 +120,7 @@ function set_auxilary {
             apt_tools
 
             pip_tools
-            src_tools 
+            src_tools sip pyqt urdfdom ogre
             ;;
     esac
 }
@@ -222,7 +222,7 @@ function brew_tools {
 
     case $distribution in
         melodic | noetic)
-            lib=(cmake sip pyqt5 graphviz qt@5)
+            lib=(cmake graphviz qt@5)
             lib=(${lib[@]} orocos-kdl boost boost-python3 gpgme log4cxx openssl)
             ;;
         foxy)
@@ -236,7 +236,7 @@ function brew_tools {
             lib=(${lib[@]} log4cxx spdlog)       # dependencies for rcl_logging
             lib=(${lib[@]} bison cunit)          # dependencies for Cyclone DDS
             lib=(${lib[@]} qt@5 freetype assimp) # dependencies for Rviz
-            lib=(${lib[@]} graphviz pyqt5 sip)   # rqt dependencies
+            lib=(${lib[@]} graphviz sip)         # rqt dependencies
             ;;
     esac
     
@@ -253,11 +253,9 @@ function pip_tools {
     case $distribution in
         melodic | noetic)
             if [[ $os == "Darwin" ]]; then
-                lib=(rosdep rosinstall_generator vcstool \
-                            empy wheel pygraphviz pydot numpy)
+                lib=(rosdep rosinstall_generator vcstool empy wheel pygraphviz pydot numpy)
             elif [[ $os == "Linux" ]]; then
-                lib=(rosdep rosinstall_generator vcstool \
-                            empy numpy)
+                lib=(rosdep rosinstall_generator vcstool empy numpy)
             fi
             ;;
         foxy)
@@ -267,7 +265,7 @@ function pip_tools {
                          cryptography empy flake8 flake8-blind-except flake8-builtins \
                          flake8-class-newline flake8-comprehensions flake8-deprecated \
                          flake8-docstrings flake8-import-order flake8-quotes ifcfg \
-                         importlib-metadata lark lark-parser lxml mock mypy==0.761 netifaces \
+                         importlib-metadata lark lark-parser lxml mock mypy netifaces \
                          nose numpy pep8 pydocstyle pydot pygraphviz pyparsing \
                          pytest-mock rosdep setuptools vcstool rosdistro)
             elif [[ $os == "Linux" ]]; then
@@ -276,7 +274,7 @@ function pip_tools {
                          flake8-blind-except flake8-builtins flake8-class-newline \
                          flake8-comprehensions flake8-deprecated flake8-docstrings \
                          flake8-import-order flake8-quotes \
-                         lark numpy pyqt5 \
+                         lark numpy \
                          pytest-repeat pytest-rerunfailures pytest)
             fi
             ;;
@@ -325,8 +323,8 @@ function pip_tools {
 }
 
 #-----------------------------------------------------------------------------------
-# some tools/libraries, like sip/PyQt/urdfdom could NOT be found if installed by brew/apt,
-# so they have to be installed manually.
+# some tools/libraries, like sip/PyQt/urdfdom could NOT be found or called properly
+# if installed by brew/apt, so they have to be installed manually.
 #
 # sip/PyQt/urdfdom/OGRE
 
@@ -349,9 +347,10 @@ function src_tools {
                 echo
                 mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
-                if [[ ! `pip3 list | grep sip` ]]; then
+                if [[ ! -f $rosenv/bin/sip ]]; then
                     if [ ! -f "sip-$vsip.tar.gz" ]; then
-                        wget https://sourceforge.net/projects/pyqt/files/sip/sip-$vsip/sip-$vsip.tar.gz
+#                       wget https://sourceforge.net/projects/pyqt/files/sip/sip-$vsip/sip-$vsip.tar.gz
+                        wget https://distfiles.macports.org/py-sip/sip-$vsip.tar.gz
                     fi
 
                     tar xzf sip-$vsip.tar.gz
@@ -382,8 +381,11 @@ function src_tools {
                     tar xzf PyQt5_gpl-$vpyqt.tar.gz
                     cd PyQt5_gpl-$vpyqt
 
-                    export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
-                    yes yes | python3 ./configure.py --sip $rosenv/bin/sip 
+                    if [[ `uname` == "Darwin" ]]; then
+                        export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
+                    fi
+                    
+                    yes yes | python3 ./configure.py --sip $rosenv/bin/sip --destdir $rosenv
                     make -j 8
                     make install
                     cd .. && rm -rf PyQt5_gpl-$vpyqt
@@ -415,7 +417,7 @@ function src_tools {
 
                     unzip urdfdom-$vurdfdom.zip
                     cd urdfdom-$vurdfdom && mkdir -p build && cd build
-                    cmake --install-prefix=$rosenv ..
+                    cmake -DCMAKE_INSTALL_PREFIX=$rosenv ..
                     make -j 8
                     make install
 
@@ -776,6 +778,7 @@ fi
 print_welcome
 
 if [[ $step == "all" || $step == "auxilary" ]]; then
+    set_compiler
     set_auxilary
 fi
 
