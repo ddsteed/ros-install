@@ -14,7 +14,7 @@
 export roshome=/Users/fengh/Research/ROS
 export rosbin=/opt/ros
 
-export distribution_default=noetic
+export distribution_default=foxy
 export run_default=install
 export rosenv_default=envtools
 export step_default=compile
@@ -106,6 +106,19 @@ function print_welcome {
 }
 
 #-----------------------------------------------------------------------------------
+function set_path {
+    case $os in
+        Darwin)
+            source ~/Init/x86
+            ;;
+        Linux)
+            ;;
+    esac
+
+    export PATH="/usr/local/bin:$PATH"
+}
+
+#-----------------------------------------------------------------------------------
 function set_auxilary {
     case $os in
         Darwin)
@@ -177,7 +190,12 @@ function add_apt_repository {
 function apt_tools {
     case $distribution in
         melodic | noetic)
-            lib=(python3-rosdep python3-rosinstall-generator python3-vcstool build-essential liborocos-kdl-dev libogre-1.12 liblog4cxx-dev libgpgme-dev liburdfdom-dev) 
+            lib=(python3-rosdep python3-rosinstall-generator python3-vcstool \
+                     build-essential liborocos-kdl-dev libogre-1.12 liblog4cxx-dev \
+                     libgpgme-dev liburdfdom-dev) 
+
+            # X org dependencies
+            lib=(${lib[@]} xorg-dev libxrandr-dev libxcursor-dev)
             ;;
         foxy)
             lib=(build-essential \
@@ -197,6 +215,9 @@ function apt_tools {
 
             # install Cyclone DDS dependencies
             lib=(${lib[@]} libcunit1-dev)
+
+            # X org dependencies
+            lib=(${lib[@]} xorg-dev libxrandr-dev libxcursor-dev)
             ;;
     esac
 
@@ -260,22 +281,22 @@ function pip_tools {
             ;;
         foxy)
             if [[ $os == "Darwin" ]]; then
-                lib=(argcomplete \
-                         catkin_pkg colcon-common-extensions coverage \
-                         cryptography empy flake8 flake8-blind-except flake8-builtins \
-                         flake8-class-newline flake8-comprehensions flake8-deprecated \
-                         flake8-docstrings flake8-import-order flake8-quotes ifcfg \
-                         importlib-metadata lark lark-parser lxml mock mypy netifaces \
-                         nose numpy pep8 pydocstyle pydot pygraphviz pyparsing \
-                         pytest-mock rosdep setuptools vcstool rosdistro)
+                lib=(rosdep rosinstall_generator vcstool \
+                            argcomplete catkin_pkg colcon-common-extensions coverage \
+                            cryptography empy flake8 flake8-blind-except flake8-builtins \
+                            flake8-class-newline flake8-comprehensions flake8-deprecated \
+                            flake8-docstrings flake8-import-order flake8-quotes ifcfg \
+                            importlib-metadata lark lark-parser lxml mock mypy netifaces \
+                            nose numpy pep8 pydocstyle pydot pygraphviz pyparsing pyqt5\
+                            pytest-mock rosdep setuptools vcstool rosdistro)
             elif [[ $os == "Linux" ]]; then
-                lib=(argcomplete \
-                         catkin_pkg empy \
-                         flake8-blind-except flake8-builtins flake8-class-newline \
-                         flake8-comprehensions flake8-deprecated flake8-docstrings \
-                         flake8-import-order flake8-quotes \
-                         lark numpy \
-                         pytest-repeat pytest-rerunfailures pytest)
+                lib=(rosdep rosinstall_generator vcstool \
+                            argcomplete catkin_pkg empy \
+                            flake8-blind-except flake8-builtins flake8-class-newline \
+                            flake8-comprehensions flake8-deprecated flake8-docstrings \
+                            flake8-import-order flake8-quotes \
+                            lark numpy pyqt5 \
+                            pytest-repeat pytest-rerunfailures pytest)
             fi
             ;;
     esac
@@ -383,7 +404,6 @@ function src_tools {
 
                     if [[ `uname` == "Darwin" ]]; then
                         export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
-                        export PATH="/usr/local/homebrew/bin:/usr/local/homebrew/sbin${PATH+:$PATH}"
                     fi
                     
                     yes yes | python3 ./configure.py --sip $rosenv/bin/sip --destdir $rosenv
@@ -445,11 +465,11 @@ function src_tools {
                     unzip ogre-$vogre.zip
                     cd ogre-$vogre && mkdir -p build && cd build
 
-                    if [[ `uname` == "Linux" ]]; then
-                        sudo apt-get install libxrandr-dev
-                        sudo apt-get install libxcursor-dev
+                    if [[ `uname` == "Darwin" ]]; then
+                        export PATH="/usr/local/opt/openjdk/bin:$PATH"
+                        export CPPFLAGS="-I/usr/local/opt/openjdk/include"
                     fi
-                    
+
                     cmake -D CMAKE_INSTALL_PREFIX=$rosenv ..
                     make -j 8
                     make install
@@ -609,24 +629,22 @@ function get_code {
     echo "* download ros_$var source codes ..."
     echo
 
-    rosinstall_generator $var --rosdistro $distribution --deps --tar > ${distribution}_$var.repos
+    if [ ! -f ${distribution}_$var.repos ]; then
+        case $distribution in
+            melodic | noetic)
+                rosinstall_generator $var --rosdistro $distribution --deps --tar > ${distribution}_$var.repos
+                ;;
+            foxy)
+                wget https://raw.githubusercontent.com/ros2/ros2/$distribution/ros2.repos -O \
+                     ${distribution}_$var.repos
+                ;;
+        esac
+    fi
+
     vcs import src_$var < ${distribution}_$var.repos
 
     rm -rf ./src
     ln -s src_$var src
-
-    case $distribution in
-        melodic | noetic)
-          # rosinstall_generator desktop --rosdistro $distribution --deps --tar > $distribution.repos
-          # vcs import --input $distribution.repos ./src
-          # rosinstall_generator desktop_full --rosdistro $distribution --deps --tar > $distribution-full.repos
-          # vcs import --input $distribution-full.repos ./src
-        ;;
-        foxy | galactic | rolling)
-          # wget https://raw.githubusercontent.com/ros2/ros2/$distribution/ros2.repos
-          # vcs import src < $distribution.repos
-        ;;
-    esac
 }
 
 #-----------------------------------------------------------------------------------
@@ -787,6 +805,7 @@ if [[ $os == "Darwin" ]]; then
 fi
 
 print_welcome
+set_path
 
 if [[ $step == "all" || $step == "auxilary" ]]; then
     set_compiler
