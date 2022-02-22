@@ -528,8 +528,6 @@ function set_env {
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix boost):$CMAKE_PREFIX_PATH"
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix boost)/include:$CMAKE_PREFIX_PATH"
 
-                export CMAKE_PREFIX_PATH="$rosenv:$CMAKE_PREFIX_PATH"
-                export PATH="$rosenv/bin:$PATH"
 
             elif [[ $os == "Linux" ]]; then
                 export CMAKE_PREFIX_PATH="/usr/include/eigen3:$CMAKE_PREFIX_PATH"
@@ -570,6 +568,10 @@ function set_env {
             fi
             ;;
     esac
+
+    export CMAKE_PREFIX_PATH="$rosenv:$CMAKE_PREFIX_PATH"
+    export CMAKE_PREFIX_PATH="$rosenv/PyQt5:$CMAKE_PREFIX_PATH"
+    export PATH="$rosenv/bin:$PATH"
 
     echo
     echo "* ------ "
@@ -704,7 +706,8 @@ function build_src {
             opt1="-DCMAKE_BUILD_TYPE=Release                              \
                   -DPYTHON_EXECUTABLE=$rosenv/bin/python3                 "
 
-            opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                    "
+            opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                    \
+                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   "          
 
             if [[ $1 == "current" ]]; then
                 shift
