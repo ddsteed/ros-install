@@ -569,6 +569,7 @@ function set_env {
             ;;
     esac
 
+    source $rosenv/bin/activate
     export CMAKE_PREFIX_PATH="$rosenv:$CMAKE_PREFIX_PATH"
     export CMAKE_PREFIX_PATH="$rosenv/PyQt5:$CMAKE_PREFIX_PATH"
     export PATH="$rosenv/bin:$PATH"
