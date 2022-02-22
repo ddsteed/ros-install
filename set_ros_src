@@ -394,7 +394,7 @@ function src_tools {
                 echo
                 mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
-                if [[ ! `pip3 list | grep PyQt` ]]; then
+                if [[ ! `pip3 list | grep PyQt5-sip` ]]; then
                     if [ ! -f "PyQt5_gpl-$vpyqt.tar.gz" ]; then
                         wget https://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-$vpyqt/PyQt5_gpl-$vpyqt.tar.gz
                     fi
