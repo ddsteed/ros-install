@@ -14,7 +14,7 @@
 export roshome=/Users/fengh/Research/ROS
 export rosbin=/opt/ros
 
-export distribution_default=foxy
+export distribution_default=noetic
 export run_default=install
 export rosenv_default=envtools
 export step_default=compile
@@ -677,6 +677,8 @@ function patch_src {
 
     case $distribution in
         melodic | noetic)
+            cp $catkin/patch/tf2_CMakeLists.txt \
+               $catkin/src/geometry2/tf2/CMakeLists.txt
             ;;
         foxy)
             cp $catkin/patch/rviz_assimp_vendor-extras.cmake.in  \
@@ -799,8 +801,8 @@ function build_src {
             if [[ $distribution == "foxy" ]]; then
                 colcon_comp
             elif [[ $distribution == "melodic" || $distribution == "noetic" ]]; then
-#               catkin_comp current   -DCATKIN_WHITELIST_PACKAGES=""
-                catkin_comp isolated  
+                catkin_comp current   -DCATKIN_WHITELIST_PACKAGES=""
+#               catkin_comp isolated  
             fi
             ;;
         *)
