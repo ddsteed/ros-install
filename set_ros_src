@@ -125,7 +125,7 @@ function set_auxilary {
             brew_tools
 
             pip_tools
-            src_tools sip pyqt urdfdom ogre
+            src_tools sip pyqt urdfdom ogre log4cxx
             ;;
         Linux)
             set_locale
@@ -133,7 +133,7 @@ function set_auxilary {
             apt_tools
 
             pip_tools
-            src_tools sip pyqt urdfdom ogre
+            src_tools sip pyqt urdfdom ogre log4cxx
             ;;
     esac
 }
@@ -344,10 +344,13 @@ function pip_tools {
 }
 
 #-----------------------------------------------------------------------------------
-# some tools/libraries, like sip/PyQt/urdfdom could NOT be found or called properly
-# if installed by brew/apt, so they have to be installed manually.
+# 1. some tools/libraries, like sip/PyQt/urdfdom could NOT be found or called properly
+#    if installed by brew/apt, so they have to be installed manually.
+# 2. log4cxx adds shared_ptr since 0.12.0, which could be used ONLY for ROS2-rosconsole.
+#    However, ROS1-rosconsole use ordinary pointer, so log4cxx with lower version has to
+#    be installed manually for ROS1.
 #
-# sip/PyQt/urdfdom/OGRE
+# sip/PyQt/urdfdom/OGRE/log4cxx
 
 function src_tools {
     source $rosenv/bin/activate
@@ -357,6 +360,7 @@ function src_tools {
     vpyqt=5.11.3
     vurdfdom=master
     vogre=13.3.0
+    vlog4=0.10.0
 
     for app in $@; do
         case $app in
@@ -467,7 +471,7 @@ function src_tools {
 
                     if [[ $os == "Darwin" ]]; then
                         export PATH="/usr/local/opt/openjdk/bin:$PATH"
-                        export CPPFLAGS="-I/usr/local/opt/openjdk/include"
+                        export CXXFLAGS="-I/usr/local/opt/openjdk/include $CXXFLAGS"
                     fi
 
                     cmake -D CMAKE_INSTALL_PREFIX=$rosenv ..
@@ -478,6 +482,37 @@ function src_tools {
                 else
                     echo
                     echo "     - OGRE has been installed."
+                    echo
+                fi
+                ;;
+            log4cxx)
+                # install log4cxx
+                echo 
+                echo "   - install log4cxx manually ..."
+                echo "     --------------- "
+                echo
+                mkdir -p $rosenv/tmp && cd $rosenv/tmp
+
+                if  [ ! -d "$rosenv/include/log4cxx" ]; then
+                    if [ ! -f "apache-log4cxx-$vlog4.tar.gz" ]; then
+                        wget https://archive.apache.org/dist/logging/log4cxx/$vlog4/apache-log4cxx-$vlog4.tar.gz -O apache-log4cxx-$vlog4.tar.gz
+                    fi
+
+                    tar zxvf apache-log4cxx-$vlog4.tar.gz
+                    cd apache-log4cxx-$vlog4
+
+                    sed -e 's/namespace std { class locale; }/#include <locale>>/' src/main/include/log4cxx/helpers/simpledateformat.h > simpledateformat.h.tmp
+                    mv  simpledateformat.h.tmp  src/main/include/log4cxx/helpers/simpledateformat.h
+
+                    mkdir -p build && cd build
+                    CC='arch -x86_64 clang' CXX='arch -x86_64 clang++' ../configure --prefix=$rosenv --with-apr=/usr/local/opt/apr --with-apr-util=/usr/local/opt/apr-util
+                    make -j 8
+                    set +e; make install; set -e
+
+                    cd ../.. && rm -rf apache-log4cxx-$vlog4
+                else
+                    echo
+                    echo "     - log4cxx has been installed."
                     echo
                 fi
                 ;;
@@ -520,18 +555,20 @@ function set_env {
         melodic | noetic)
             if [[ $os == "Darwin" ]]; then
 
-                # if you are using ZSH, then replace '.bashrc' with '.zshrc'
                 export OPENSSL_ROOT_DIR=$(ibrew --prefix openssl)
+                export INCFLAGS="$(ibrew --prefix openssl)/include $INCFLAGS"
+                export CMAKE_PREFIX_PATH="$(ibrew --prefix openssl):$CMAKE_PREFIX_PATH"
+
+                export INCFLAGS="$rosenv/include $INCFLAGS"
+                export CXXFLAGS="-I$rosenv/include $CXXFLAGS"
+                export CMAKE_PREFIX_PATH="$rosenv:$CMAKE_PREFIX_PATH"
 
                 # bison
                 export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:/usr/local/opt/bison
                 export PATH="/usr/local/opt/bison/bin:$PATH"
-                export LDFLAGS="-L$(ibrew --prefix bison)/lib $LDFLAGS"
 
                 # add the Qt directory to the PATH and CMAKE_PREFIX_PATH
-                export LDFLAGS="-L$(ibrew --prefix qt@5)/lib $LDFLAGS"
-                export CPPFLAGS="-I$(ibrew --prefix qt@5)/include -I$(ibrew --prefix opencv)/include/opencv4"
-                export CMAKE_CXX_FLAGS=$CPPFLAGS
+                export CXXFLAGS="-I$(ibrew --prefix qt@5)/include -I$(ibrew --prefix opencv)/include/opencv4 $CXXFLAGS"
 
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix qt@5):$CMAKE_PREFIX_PATH"
@@ -540,24 +577,24 @@ function set_env {
 
                 # export OPENSSL_ROOT_DIR=$(ibrew --prefix openssl)
                 # export LDFLAGS="-L$(ibrew --prefix openssl)/lib $LDFLAGS"
-                # export CPPFLAGS="-I$(ibrew --prefix openssl)/include $CPPFLAGS"
+                # export CXXFLAGS="-I$(ibrew --prefix openssl)/include $CXXFLAGS"
                 # export CMAKE_PREFIX_PATH="$(ibrew --prefix openssl):$CMAKE_PREFIX_PATH"
                 # export PKG_CONFIG_PATH="$(ibrew --prefix openssl)/lib/pkgconfig"
 
                 # export LDFLAGS="-L$(ibrew --prefix qt@5)/lib $LDFLAGS"
-                # export CPPFLAGS="-I$(ibrew --prefix qt@5)/include $CPPFLAGS"
-                # export CMAKE_CXX_FLAGS=$CPPFLAGS
+                # export CXXFLAGS="-I$(ibrew --prefix qt@5)/include $CXXFLAGS"
+                # export CMAKE_CXX_FLAGS=$CXXFLAGS
                 # export CMAKE_PREFIX_PATH="$(ibrew --prefix qt@5):$CMAKE_PREFIX_PATH"
                 # export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
 
                 # export LDFLAGS="-L$(ibrew --prefix log4cxx)/lib $LDFLAGS"
-                # export CPPFLAGS="-I$(ibrew --prefix log4cxx)/include $CPPFLAGS"
-                # export CMAKE_CXX_FLAGS=$CPPFLAGS
+                # export CXXFLAGS="-I$(ibrew --prefix log4cxx)/include $CXXFLAGS"
+                # export CMAKE_CXX_FLAGS=$CXXFLAGS
                 # export CMAKE_PREFIX_PATH="$(ibrew --prefix log4cxx):$CMAKE_PREFIX_PATH"
                 # export PKG_CONFIG_PATH="$(ibrew --prefix log4cxx)/share/pkgconfig $PKG_CONFIG_PATH"
 
-                # export CPPFLAGS="-I$(ibrew --prefix opencv)/include/opencv4 $CPPFLAGS"
-                # export CMAKE_CXX_FLAGS=$CPPFLAGS
+                # export CXXFLAGS="-I$(ibrew --prefix opencv)/include/opencv4 $CXXFLAGS"
+                # export CMAKE_CXX_FLAGS=$CXXFLAGS
                 # export CMAKE_PREFIX_PATH="$(ibrew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
                 # export PATH="$(ibrew --prefix opencv)/bin:$PATH"
 
@@ -592,8 +629,7 @@ function set_env {
 
                 # add the Qt directory to the PATH and CMAKE_PREFIX_PATH
                 export LDFLAGS="-L$(ibrew --prefix qt@5)/lib $LDFLAGS"
-                export CPPFLAGS="-I$(ibrew --prefix qt@5)/include -I$(ibrew --prefix opencv)/include/opencv4"
-                export CMAKE_CXX_FLAGS=$CPPFLAGS
+                export CXXFLAGS="-I$(ibrew --prefix qt@5)/include -I$(ibrew --prefix opencv)/include/opencv4 $CXXFLAGS"
 
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix qt@5):$CMAKE_PREFIX_PATH"
@@ -601,7 +637,7 @@ function set_env {
                 export PATH="$(ibrew --prefix opencv)/bin:$PATH"
 
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix assimp):$CMAKE_PREFIX_PATH"
-                export CPPFLAGS="-I$(ibrew --prefix assimp)/include $CPPFLAGS"
+                export CXXFLAGS="-I$(ibrew --prefix assimp)/include $CXXFLAGS"
                 export PATH="$(ibrew --prefix assimp)/bin:$PATH"
             elif [[ $os == "Linux" ]]; then
                 export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:/usr/include/eigen3"
@@ -621,8 +657,9 @@ function set_env {
 
     echo "     - CMAKE_PREFIX_PATH: $CMAKE_PREFIX_PATH"
     echo "     - OPENSSL_ROOT_DIR:  $OPENSSL_ROOT_DIR"
+    echo "     - INCFLAGS:          $INCFLAGS"
     echo "     - LDFLAGS:           $LDFLAGS"
-    echo "     - CPPFLAGS:          $CPPFLAGS"
+    echo "     - CXXFLAGS:          $CXXFLAGS"
     echo "     - PYTHON ENV:        $rosenv "
     echo
 
@@ -784,6 +821,7 @@ function build_src {
                   -DPYTHON_EXECUTABLE=$rosenv/bin/python3                 "
 
             opt2="--cmake-args -DCMAKE_CXX_STANDARD=17                    \
+                               -DCMAKE_INCLUDE_PATH="$INCFLAGS"           \
                                -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   "
 
             if [[ $1 == "current" ]]; then
