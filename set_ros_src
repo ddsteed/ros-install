@@ -554,56 +554,20 @@ function set_env {
     case $distribution in
         melodic | noetic)
             if [[ $os == "Darwin" ]]; then
+                export CXXFLAGS="-I$rosenv/include"
 
                 export OPENSSL_ROOT_DIR=$(ibrew --prefix openssl)
-                export INCFLAGS="$(ibrew --prefix openssl)/include $INCFLAGS"
+                export CXXFLAGS="-I$(ibrew --prefix openssl)/include $CXXFLAGS"
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix openssl):$CMAKE_PREFIX_PATH"
 
-                export INCFLAGS="$rosenv/include $INCFLAGS"
-                export CXXFLAGS="-I$rosenv/include $CXXFLAGS"
-                export CMAKE_PREFIX_PATH="$rosenv:$CMAKE_PREFIX_PATH"
-
-                # bison
-                export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:/usr/local/opt/bison
-                export PATH="/usr/local/opt/bison/bin:$PATH"
-
-                # add the Qt directory to the PATH and CMAKE_PREFIX_PATH
-                export CXXFLAGS="-I$(ibrew --prefix qt@5)/include -I$(ibrew --prefix opencv)/include/opencv4 $CXXFLAGS"
-
+                export CXXFLAGS="-I$(ibrew --prefix qt@5)/include $CXXFLAGS"
+                export CXXFLAGS="-I$(ibrew --prefix opencv)/include/opencv4 $CXXFLAGS"
+                export CXXFLAGS="-I$rosenv/PyQt5 $CXXFLAGS"
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix qt@5):$CMAKE_PREFIX_PATH"
+
                 export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
                 export PATH="$(ibrew --prefix opencv)/bin:$PATH"
-
-                # export OPENSSL_ROOT_DIR=$(ibrew --prefix openssl)
-                # export LDFLAGS="-L$(ibrew --prefix openssl)/lib $LDFLAGS"
-                # export CXXFLAGS="-I$(ibrew --prefix openssl)/include $CXXFLAGS"
-                # export CMAKE_PREFIX_PATH="$(ibrew --prefix openssl):$CMAKE_PREFIX_PATH"
-                # export PKG_CONFIG_PATH="$(ibrew --prefix openssl)/lib/pkgconfig"
-
-                # export LDFLAGS="-L$(ibrew --prefix qt@5)/lib $LDFLAGS"
-                # export CXXFLAGS="-I$(ibrew --prefix qt@5)/include $CXXFLAGS"
-                # export CMAKE_CXX_FLAGS=$CXXFLAGS
-                # export CMAKE_PREFIX_PATH="$(ibrew --prefix qt@5):$CMAKE_PREFIX_PATH"
-                # export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
-
-                # export LDFLAGS="-L$(ibrew --prefix log4cxx)/lib $LDFLAGS"
-                # export CXXFLAGS="-I$(ibrew --prefix log4cxx)/include $CXXFLAGS"
-                # export CMAKE_CXX_FLAGS=$CXXFLAGS
-                # export CMAKE_PREFIX_PATH="$(ibrew --prefix log4cxx):$CMAKE_PREFIX_PATH"
-                # export PKG_CONFIG_PATH="$(ibrew --prefix log4cxx)/share/pkgconfig $PKG_CONFIG_PATH"
-
-                # export CXXFLAGS="-I$(ibrew --prefix opencv)/include/opencv4 $CXXFLAGS"
-                # export CMAKE_CXX_FLAGS=$CXXFLAGS
-                # export CMAKE_PREFIX_PATH="$(ibrew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
-                # export PATH="$(ibrew --prefix opencv)/bin:$PATH"
-
-                # export CMAKE_PREFIX_PATH="$(ibrew --prefix eigen):$CMAKE_PREFIX_PATH"
-                # export CMAKE_PREFIX_PATH="$(ibrew --prefix eigen)/include/eigen3:$CMAKE_PREFIX_PATH"
-
-                # export CMAKE_PREFIX_PATH="$(ibrew --prefix boost):$CMAKE_PREFIX_PATH"
-                # export CMAKE_PREFIX_PATH="$(ibrew --prefix boost)/include:$CMAKE_PREFIX_PATH"
-
             elif [[ $os == "Linux" ]]; then
                 export CMAKE_PREFIX_PATH="/usr/include/eigen3:$CMAKE_PREFIX_PATH"
                 export CMAKE_PREFIX_PATH="$rosenv:$CMAKE_PREFIX_PATH"
@@ -612,22 +576,16 @@ function set_env {
                 export CMAKE_MODULE_PATH="$CMAKE_PREFIX_PATH"
 
                 export PATH="$rosenv/bin:$PATH"
-
             fi
             ;;
-
         foxy)
             if [[ $os == "Darwin" ]]; then
-
-                # if you are using ZSH, then replace '.bashrc' with '.zshrc'
                 export OPENSSL_ROOT_DIR=$(ibrew --prefix openssl)
 
-                # bison
                 export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:/usr/local/opt/bison
                 export PATH="/usr/local/opt/bison/bin:$PATH"
                 export LDFLAGS="-L$(ibrew --prefix bison)/lib $LDFLAGS"
 
-                # add the Qt directory to the PATH and CMAKE_PREFIX_PATH
                 export LDFLAGS="-L$(ibrew --prefix qt@5)/lib $LDFLAGS"
                 export CXXFLAGS="-I$(ibrew --prefix qt@5)/include -I$(ibrew --prefix opencv)/include/opencv4 $CXXFLAGS"
 
@@ -817,19 +775,21 @@ function build_src {
         }
 
         catkin_comp () {
-            opt1="-DCMAKE_BUILD_TYPE=Release                              \
+            opt1="-DCMAKE_FIND_FRAMEWORK=LAST                             \
+                  -DCMAKE_BUILD_TYPE=Release                              \
                   -DPYTHON_EXECUTABLE=$rosenv/bin/python3                 "
 
             opt2="--cmake-args -DCMAKE_CXX_STANDARD=17                    \
-                               -DCMAKE_INCLUDE_PATH="$INCFLAGS"           \
                                -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   "
+
+            opt3="--make-args  CXXFLAGS="$CXXFLAGS"   "
 
             if [[ $1 == "current" ]]; then
                 shift
-                ./src/catkin/bin/catkin_make          $opt1 $@ $opt2
+                ./src/catkin/bin/catkin_make          $opt1 $@ $opt2 $opt3
             elif [[ $1 == "isolated" ]]; then
                 shift
-                ./src/catkin/bin/catkin_make_isolated --install $opt1 $@ $opt2
+                ./src/catkin/bin/catkin_make_isolated --install $opt1 $@ $opt2 $opt3
             fi
         }
     fi
@@ -849,8 +809,8 @@ function build_src {
             if [[ $distribution == "foxy" ]]; then
                 colcon_comp --packages-select $package
             elif [[ $distribution == "melodic" || $distribution == "noetic" ]]; then
-#               catkin_comp current   -DCATKIN_WHITELIST_PACKAGES="$package"
-                catkin_comp isolated  --pkg=$package
+                catkin_comp current   -DCATKIN_WHITELIST_PACKAGES="$package"
+#               catkin_comp isolated  --pkg=$package
             fi
             ;;
     esac
