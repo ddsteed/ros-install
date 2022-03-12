@@ -243,8 +243,13 @@ function brew_tools {
 
     case $distribution in
         melodic | noetic)
-            lib=(cmake graphviz qt@5)
+            ibrew tap ros/deps
+            ibrew tap osrf/simulation
+
+            lib=(libyaml opencv)
+            lib=(${lib[@]} cmake graphviz qt@5)
             lib=(${lib[@]} orocos-kdl boost boost-python3 gpgme log4cxx openssl)
+            lib=(${lib[@]} qt5 pyqt5 sip)
             ;;
         foxy)
             lib=(bullet cmake cppcheck eigen pcre poco tinyxml wget)
@@ -261,7 +266,7 @@ function brew_tools {
             ;;
     esac
     
-    ibrew $run ${lib[@]}  $opt1 $opt2
+    
 }
 
 #-----------------------------------------------------------------------------------
@@ -274,7 +279,8 @@ function pip_tools {
     case $distribution in
         melodic | noetic)
             if [[ $os == "Darwin" ]]; then
-                lib=(rosdep rosinstall_generator vcstool empy wheel pygraphviz pydot numpy)
+                lib=(setuptools rosdep rosinstall_generator wstool rosinstall catkin_tools bloom empy sphinx pycurl)
+                lib=(${lib[@]} vcstool wheel pygraphviz pydot numpy)
             elif [[ $os == "Linux" ]]; then
                 lib=(rosdep rosinstall_generator vcstool empy numpy)
             fi
@@ -560,6 +566,9 @@ function set_env {
                 export CXXFLAGS="-I$(ibrew --prefix openssl)/include $CXXFLAGS"
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix openssl):$CMAKE_PREFIX_PATH"
 
+                export CXXFLAGS="-I$(ibrew --prefix boost)/include $CXXFLAGS"
+                export CMAKE_PREFIX_PATH="$(ibrew --prefix boost):$CMAKE_PREFIX_PATH"
+
                 export CXXFLAGS="-I$(ibrew --prefix qt@5)/include $CXXFLAGS"
                 export CXXFLAGS="-I$(ibrew --prefix opencv)/include/opencv4 $CXXFLAGS"
                 export CXXFLAGS="-I$rosenv/PyQt5 $CXXFLAGS"
@@ -605,6 +614,7 @@ function set_env {
     esac
 
     source $rosenv/bin/activate
+    export CMAKE_INCLUDE_PATH="$rosenv:$CMAKE_INCLUDE_PATH"
     export CMAKE_PREFIX_PATH="$rosenv:$CMAKE_PREFIX_PATH"
     export CMAKE_PREFIX_PATH="$rosenv/PyQt5:$CMAKE_PREFIX_PATH"
     export PATH="$rosenv/bin:$PATH"
@@ -613,12 +623,11 @@ function set_env {
     echo "* ------ "
     echo "* environments are: "
 
-    echo "     - CMAKE_PREFIX_PATH: $CMAKE_PREFIX_PATH"
-    echo "     - OPENSSL_ROOT_DIR:  $OPENSSL_ROOT_DIR"
-    echo "     - INCFLAGS:          $INCFLAGS"
-    echo "     - LDFLAGS:           $LDFLAGS"
-    echo "     - CXXFLAGS:          $CXXFLAGS"
-    echo "     - PYTHON ENV:        $rosenv "
+    echo "     - CMAKE_PREFIX_PATH:  $CMAKE_PREFIX_PATH"
+    echo "     - CMAKE_INCLUDE_PATH: $CMAKE_INCLUDE_PATH"
+    echo "     - LDFLAGS:            $LDFLAGS"
+    echo "     - CXXFLAGS:           $CXXFLAGS"
+    echo "     - PYTHON ENV:         $rosenv "
     echo
 
     source $rosenv/bin/activate
@@ -672,8 +681,11 @@ function patch_src {
 
     case $distribution in
         melodic | noetic)
-            cp $catkin/patch/tf2_CMakeLists.txt \
-               $catkin/src/geometry2/tf2/CMakeLists.txt
+#           cp $catkin/patch/tf2_CMakeLists.txt \
+#              $catkin/src/geometry2/tf2/CMakeLists.txt
+
+#           cp $catkin/patch/catkinConfig.cmake.in \
+#              $catkin/src/catkin/cmake/catkinConfig.cmake.in
             ;;
         foxy)
             cp $catkin/patch/rviz_assimp_vendor-extras.cmake.in  \
@@ -744,7 +756,7 @@ function build_src {
             colcon $opt1 $@ $opt2
         }
 
-        catkin_comp () {
+        catkin_make_comp () {
             opt1="-DCMAKE_BUILD_TYPE=Release                              \
                   -DPYTHON_EXECUTABLE=$rosenv/bin/python3                 "
 
@@ -776,15 +788,16 @@ function build_src {
             colcon $opt1 $@ $opt2
         }
 
-        catkin_comp () {
-            opt1="-DCMAKE_FIND_FRAMEWORK=LAST                             \
+        catkin_make_comp () {
+            opt1="-DCMAKE_FIND_FRAMEWORK=NEVER                            \
                   -DCMAKE_BUILD_TYPE=Release                              \
                   -DPYTHON_EXECUTABLE=$rosenv/bin/python3                 "
 
             opt2="--cmake-args -DCMAKE_CXX_STANDARD=17                    \
+                               -DCMAKE_INCLUDE_PATH="$CMAKE_INCLUDE_PATH" \
                                -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   "
 
-            opt3="--make-args  CXXFLAGS="$CXXFLAGS"   "
+            # opt3="--make-args  CXXFLAGS="$CXXFLAGS" "
 
             if [[ $1 == "current" ]]; then
                 shift
@@ -794,6 +807,19 @@ function build_src {
                 ./src/catkin/bin/catkin_make_isolated --install $opt1 $@ $opt2 $opt3
             fi
         }
+
+        catkin_comp () {
+            catkin config --install \
+                   --install-space  $install_base \
+                   --cmake-args \
+                     -DCATKIN_EBABLE_TESTING=1 \
+                     -DCMAKE_BUILD_TYPE=Release \
+                     -DCMAKE_FIND_FRAMEWORK=LAST \
+                     -DPYTHON_EXECUTALBE=$rosenv/bin/python3 
+
+            catkin build --limit-status-rate 1
+        }
+
     fi
 
     case $package in
@@ -801,8 +827,9 @@ function build_src {
             if [[ $distribution == "foxy" ]]; then
                 colcon_comp
             elif [[ $distribution == "melodic" || $distribution == "noetic" ]]; then
-                catkin_comp current   -DCATKIN_WHITELIST_PACKAGES=""
-#               catkin_comp isolated  
+                catkin_make_comp current   -DCATKIN_WHITELIST_PACKAGES=""
+#               catkin_make_comp isolated  
+#               catkin_comp
             fi
             ;;
         *)
@@ -811,8 +838,8 @@ function build_src {
             if [[ $distribution == "foxy" ]]; then
                 colcon_comp --packages-select $package
             elif [[ $distribution == "melodic" || $distribution == "noetic" ]]; then
-                catkin_comp current   -DCATKIN_WHITELIST_PACKAGES="$package"
-#               catkin_comp isolated  --pkg=$package
+#               catkin_make_comp current   -DCATKIN_WHITELIST_PACKAGES="$package"
+                catkin_make_comp isolated  --pkg=$package
             fi
             ;;
     esac
@@ -838,7 +865,7 @@ if [[ $step == "all" || $step == "auxilary" ]]; then
 fi
 
 if [[ $step == "all" || $step == "getsrc" ]]; then
-    get_code
+    get_code  
     patch_src
     ros_init
 fi
