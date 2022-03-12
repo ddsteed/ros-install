@@ -679,7 +679,9 @@ function patch_src {
             cp $catkin/patch/rviz_assimp_vendor-extras.cmake.in  \
                $catkin/src/ros2/rviz/rviz_assimp_vendor/.
 
-            mkdir -p $bipath && cd $bipath && tar zxvf $catkin/patch/${distribution}_build_patch.tgz 
+            if [[ $os == "Linux" ]]; then
+                mkdir -p $bipath && cd $bipath && tar zxvf $catkin/patch/${distribution}_build_patch.tgz
+            fi
             ;;
     esac
 }

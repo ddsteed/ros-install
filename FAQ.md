@@ -15,3 +15,8 @@
 
 
 ## MAC
+1. git download fails
+
+	A: 1) find a VPN proxy. 
+		2) use git ssh instead of git http in "~/.gitconfig"
+		
