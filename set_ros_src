@@ -467,7 +467,7 @@ function src_tools {
                 echo
                 mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
-                if  [ ! -f "$rosenv/lib/libOgreBitesQt.dylib" ]; then
+                if  [ ! -f "$rosenv/lib/libOgreBitesQt.dylib" && ! -f "$rosenv/lib/libOgreBitesQt.so" ]; then
                     if [ ! -f "ogre-$vogre.zip" ]; then
                         wget https://codeload.github.com/OGRECave/ogre/zip/refs/tags/v$vogre -O ogre-$vogre.zip
                     fi
