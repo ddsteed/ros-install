@@ -467,7 +467,7 @@ function src_tools {
                 echo
                 mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
-                if  [ ! -d "$rosenv/lib/OGRE" ]; then
+                if  [ ! -f "$rosenv/lib/libOgreBitesQt.dylib" ]; then
                     if [ ! -f "ogre-$vogre.zip" ]; then
                         wget https://codeload.github.com/OGRECave/ogre/zip/refs/tags/v$vogre -O ogre-$vogre.zip
                     fi
@@ -622,7 +622,7 @@ function set_env {
 }
 
 #-----------------------------------------------------------------------------------
-function get_code {
+function get_src {
     source $rosenv/bin/activate
 
     if [[ $1 == "" ]]; then
@@ -850,7 +850,7 @@ if [[ $step == "all" || $step == "auxilary" ]]; then
 fi
 
 if [[ $step == "all" || $step == "getsrc" ]]; then
-    get_code  
+    get_src
     patch_src
     ros_init
 fi
