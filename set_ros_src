@@ -511,7 +511,14 @@ function src_tools {
                     mv  simpledateformat.h.tmp  src/main/include/log4cxx/helpers/simpledateformat.h
 
                     mkdir -p build && cd build
-                    CC='arch -x86_64 clang' CXX='arch -x86_64 clang++' ../configure --prefix=$rosenv --with-apr=/usr/local/opt/apr --with-apr-util=/usr/local/opt/apr-util
+
+                    if [[ `uname` == "Darwin" ]]; then
+                        export CC='arch -x86_64 clang'
+                        export CXX='arch -x86_64 clang++'
+                    fi
+                    
+                    ../configure --prefix=$rosenv --with-apr=/usr/local/opt/apr \
+                                 --with-apr-util=/usr/local/opt/apr-util
                     make -j 8
                     set +e; make install; set -e
 
