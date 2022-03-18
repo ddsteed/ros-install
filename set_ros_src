@@ -404,7 +404,7 @@ function src_tools {
                 echo
                 mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
-                if [[ ! `pip3 list | grep PyQt5-sip` ]]; then
+                if [ ! -d "$rosenv/PyQt5" ]; then
                     if [ ! -f "PyQt5_gpl-$vpyqt.tar.gz" ]; then
                         wget https://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-$vpyqt/PyQt5_gpl-$vpyqt.tar.gz
                     fi
@@ -493,6 +493,10 @@ function src_tools {
                 ;;
             log4cxx)
                 # install log4cxx
+                if [[ $distribution == foxy ]]; then
+                    continue
+                fi
+                
                 echo 
                 echo "   - install log4cxx manually ..."
                 echo "     --------------- "
@@ -513,12 +517,11 @@ function src_tools {
                     mkdir -p build && cd build
 
                     if [[ `uname` == "Darwin" ]]; then
-                        export CC='arch -x86_64 clang'
-                        export CXX='arch -x86_64 clang++'
+                        CC='arch -x86_64 clang' CXX='arch -x86_64 clang++' ../configure --prefix=$rosenv --with-apr=/usr/local/opt/apr --with-apr-util=/usr/local/opt/apr-util
+                    elif [[ `uname` == "Linux" ]]; then
+                        ../configure --prefix=$rosenv --with-apr=/usr/local/opt/apr --with-apr-util=/usr/local/opt/apr-util
                     fi
                     
-                    ../configure --prefix=$rosenv --with-apr=/usr/local/opt/apr \
-                                 --with-apr-util=/usr/local/opt/apr-util
                     make -j 8
                     set +e; make install; set -e
 
