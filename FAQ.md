@@ -1,23 +1,38 @@
 # noetic
+
+## General
+
+
 ## Linux
 ## MAC
-1. log4cxx: no viable conversion from normal pointer to smart shared_ptr
++ log4cxx
+
+	> no viable conversion from normal pointer to smart shared_ptr
   
-   A: 1) log4cxx 0.12.0 upgrade pointer to smart one, so one has to install 0.10.0 version and link it manually. (do NOT use brew version.)
-      2) brew uninstall default log4cxx since catkin_make's find_package will search system firstly.
-
-# foxy
-## Linux
-### library
-
-1. library_abs NOTFOUND under Linux
+   - log4cxx 0.12.0 upgrade pointer to smart one, so one has to install 0.10.0 version and link it manually. (do NOT use brew version.)
+   - brew uninstall default log4cxx since catkin\_make's find_package will search system firstly.
    
-   A: apt install foxy_desktop
+# foxy
+## General
++ git
+
+	> git download fails
+
+	- find a VPN proxy. 
+	- use git ssh instead of git http in "~/.gitconfig"
+		
+## Linux
+
++ library_abs 
+
+	> library_abs NOTFOUND under Linux
+   
+   - apt install foxy_desktop
 
 
 ## MAC
-1. git download fails
++ rcpputils
 
-	A: 1) find a VPN proxy. 
-		2) use git ssh instead of git http in "~/.gitconfig"
-		
+	> gtest-matchers.h:739:3: error: definition of implicit copy constructor for 'MatchesRegexMatcher' is deprecated because it has a user-declared copy assignment operator [-Werror,-Wdeprecated-copy]
+	
+
