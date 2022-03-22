@@ -603,12 +603,13 @@ function set_env {
                 export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
                 export PATH="$(ibrew --prefix opencv)/bin:$PATH"
 
-                export CMAKE_PREFIX_PATH="$(ibrew --prefix log4cxx)/include:$CMAKE_PREFIX_PATH"
+                export CMAKE_PREFIX_PATH="$(ibrew --prefix log4cxx):$CMAKE_PREFIX_PATH"
 
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix assimp):$CMAKE_PREFIX_PATH"
                 export PATH="$(ibrew --prefix assimp)/bin:$PATH"
 
-                export CXXFLAGS="-Wno-deprecated-copy"
+                # close all warning messages since ROS is compiled by non-ISO C++-11
+                export CXXFLAGS="-w "
             elif [[ $os == "Linux" ]]; then
                 export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:/usr/include/eigen3"
                 export LDFLAGS="-latomic $LDFLAGS"

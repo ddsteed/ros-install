@@ -35,4 +35,5 @@
 
 	> gtest-matchers.h:739:3: error: definition of implicit copy constructor for 'MatchesRegexMatcher' is deprecated because it has a user-declared copy assignment operator [-Werror,-Wdeprecated-copy]
 	
-
+	- close all warning messages since ROS is compiled by non-ISO C++-11
+	- add CXXFLAGS="-w" 
