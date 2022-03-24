@@ -484,6 +484,10 @@ function src_tools {
                     cd ogre-$vogre && mkdir -p build && cd build
 
                     if [[ $os == "Darwin" ]]; then
+                        if [[ ! -d /usr/local/opt/openjdk ]]; then
+                            ibrew install openjdk
+                            ibrew link openjdk
+                        fi
                         export PATH="/usr/local/opt/openjdk/bin:$PATH"
                         export CXXFLAGS="-I/usr/local/opt/openjdk/include $CXXFLAGS"
                     fi
