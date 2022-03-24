@@ -12,6 +12,15 @@
    - log4cxx 0.12.0 upgrade pointer to smart one, so one has to install 0.10.0 version and link it manually. (do NOT use brew version.)
    - brew uninstall default log4cxx since catkin\_make's find_package will search system firstly.
    
++ qt\_gui\_cpp
+
+	> Failed to find "gl.h"
+	
+	- xcode changes OpenGL directory 
+	- ln -s "$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Headers" \
+  		/usr/local/include/OpenGL
+  -  export CMAKE_PREFIX_PATH="/usr/local/include/OpenGL:$CMAKE\_PREFIX\_PATH"
+	
 # foxy
 ## General
 + git

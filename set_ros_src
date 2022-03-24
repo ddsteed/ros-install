@@ -14,7 +14,7 @@
 export roshome=/Users/fengh/Research/ROS
 export rosbin=/opt/ros
 
-export distribution_default=foxy
+export distribution_default=noetic
 export run_default=install
 export rosenv_default=envtools
 export step_default=compile
@@ -248,8 +248,11 @@ function brew_tools {
 
             lib=(libyaml opencv)
             lib=(${lib[@]} cmake graphviz qt@5)
-            lib=(${lib[@]} orocos-kdl boost boost-python3 gpgme log4cxx openssl)
+            lib=(${lib[@]} orocos-kdl boost boost-python3 gpgme openssl)
             lib=(${lib[@]} qt5 pyqt5 sip)
+
+            # log4cxx change smart pointer from which ROS1 could NOT call, so install it manually.
+            ibrew uninstall log4cxx -f
             ;;
         foxy)
             lib=(bullet cmake cppcheck eigen pcre poco tinyxml wget)
@@ -266,7 +269,12 @@ function brew_tools {
             ;;
     esac
     
+    echo " ----------------------------------------- "
+    echo "  ${lib[@]} "
+    echo " ----------------------------------------- "
+    echo
     
+    ibrew $run ${lib[@]} $opt1 $opt2
 }
 
 #-----------------------------------------------------------------------------------
@@ -571,10 +579,14 @@ function set_env {
     case $distribution in
         melodic | noetic)
             if [[ $os == "Darwin" ]]; then
-                export CXXFLAGS="-I$rosenv/include $CXXFLAGS"
+                # for OpenGL
+                if [[ ! -d /usr/local/include/OpenGL ]]; then
+                    ln -s "$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Headers" \
+                       /usr/local/include/OpenGL
+                fi
+                export CMAKE_PREFIX_PATH="/usr/local/include/OpenGL:$CMAKE_PREFIX_PATH"
 
                 export OPENSSL_ROOT_DIR=$(ibrew --prefix openssl)
-                export CXXFLAGS="-I$(ibrew --prefix openssl)/include $CXXFLAGS"
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix openssl):$CMAKE_PREFIX_PATH"
 
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
@@ -797,7 +809,9 @@ function build_src {
                   -DPYTHON_EXECUTABLE=$rosenv/bin/python3                 "
 
             opt2="--cmake-args -DCMAKE_CXX_STANDARD=17                    \
-                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   "
+                               -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   \
+                               -DCMAKE_CXX_COMPILER="$CXX"                \
+                               -DCMAKE_CXX_FLAGS="$CXXFLAGS"              "
 
             # opt3="--make-args  CXXFLAGS="$CXXFLAGS" "
 
