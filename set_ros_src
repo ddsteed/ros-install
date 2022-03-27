@@ -269,9 +269,7 @@ function brew_tools {
             ;;
     esac
     
-    echo " ----------------------------------------- "
-    echo "  ${lib[@]} "
-    echo " ----------------------------------------- "
+    echo "      ${lib[@]} "
     echo
     
     ibrew $run ${lib[@]} $opt1 $opt2
@@ -317,23 +315,23 @@ function pip_tools {
     
     case $run in
         install)
-            echo "   - create virtual python environment ..."
+            echo "- create virtual python environment ..."
             python3 -m venv   $rosenv
             source $rosenv/bin/activate
             $rosenv/bin/python3 -m pip install --upgrade pip
 
             echo 
-            echo "   - $run pip packages in $rosenv ... "
-            echo "     -------- "
+            echo "- $run pip packages in $rosenv ... "
+            echo "-------- "
 
             opt="--global-option=build_ext --global-option='-I/usr/local/include/' \
                  --global-option='-L/usr/local/lib' "
 
             for app in ${lib[@]}; do
                 echo
-                echo "      ----------------------------------------- "
-                echo "      ... $app is now being installed ..."
-                echo "      ----------------------------------------- "
+                echo "----------------------------------------- "
+                echo "... $app is now being installed ..."
+                echo "----------------------------------------- "
                 echo
                 if [[ $app == pygraphviz ]]; then
                     pip3 $run $opt $app
@@ -345,12 +343,12 @@ function pip_tools {
             pip3 $run --upgrade setuptools
             ;;
         remove)
-            echo "   - $run pip packages in $rosenv ... "
-            echo "     -------- "
+            echo "- $run pip packages in $rosenv ... "
+            echo "  -------- "
             echo
             source $rosenv/bin/activate && pip3 uninstall -y ${lib[@]}
 
-            echo "   - delete virtual python environment $rosenv ... "
+            echo "- delete virtual python environment $rosenv ... "
             rm -rf $rosenv
             ;;
     esac
@@ -381,8 +379,8 @@ function src_tools {
             sip)
                 # install SIP first
                 echo 
-                echo "   - install sip manually ..."
-                echo "     ----------- "
+                echo "- install sip manually ..."
+                echo "  ----------- "
                 echo
                 mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
@@ -399,16 +397,15 @@ function src_tools {
                     make install
                     cd .. && rm -rf sip-$vsip
                 else
-                    echo
-                    echo "     - sip has been installed."
+                    echo "  - sip has been installed."
                     echo
                 fi
                 ;;
             pyqt)
                 # install pyqt
                 echo 
-                echo "   - install PyQt manually ..."
-                echo "     ------------ "
+                echo "- install PyQt manually ..."
+                echo "  ------------ "
                 echo
                 mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
@@ -429,23 +426,22 @@ function src_tools {
                     make install
                     cd .. && rm -rf PyQt5_gpl-$vpyqt
                 else
-                    echo
-                    echo "     - PyQt has been installed."
+                    echo "  - PyQt has been installed."
                     echo
                 fi
 
                 # ROS 2 needs pyqt5.sip module
                 echo 
-                echo "   - install pyqt5.sip module ..."
-                echo "     ----------------- "
+                echo "- install pyqt5.sip module ..."
+                echo "  ----------------- "
                 echo
                 pip3 $run -U pyqt5.sip
                 ;;
             urdfdom)
                 # install urdfdom
                 echo 
-                echo "   - install urdfdom manually ..."
-                echo "     --------------- "
+                echo "- install urdfdom manually ..."
+                echo "  --------------- "
                 echo
                 mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
@@ -462,16 +458,15 @@ function src_tools {
 
                     cd ../.. && rm -rf urdfdom-$vurdfdom
                 else
-                    echo
-                    echo "     - urdfdom has been installed."
+                    echo "  - urdfdom has been installed."
                     echo
                 fi
                 ;;
             ogre)
                 # install OGRE
                 echo 
-                echo "   - install OGRE manually ..."
-                echo "     ------------ "
+                echo "- install OGRE manually ..."
+                echo "  ------------ "
                 echo
                 mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
@@ -498,8 +493,7 @@ function src_tools {
 
                     cd ../.. && rm -rf ogre-$vogre
                 else
-                    echo
-                    echo "     - OGRE has been installed."
+                    echo "  - OGRE has been installed."
                     echo
                 fi
                 ;;
@@ -510,8 +504,8 @@ function src_tools {
                 fi
                 
                 echo 
-                echo "   - install log4cxx manually ..."
-                echo "     --------------- "
+                echo "- install log4cxx manually ..."
+                echo "  --------------- "
                 echo
                 mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
@@ -539,13 +533,12 @@ function src_tools {
 
                     cd ../.. && rm -rf apache-log4cxx-$vlog4
                 else
-                    echo
-                    echo "     - log4cxx has been installed."
+                    echo "  - log4cxx has been installed."
                     echo
                 fi
                 ;;
             *)
-                echo " $app is NOT set to be installed manually!"
+               echo " $app is NOT set to be installed manually!"
                 echo
                 ;;
         esac
@@ -589,6 +582,9 @@ function set_env {
                        /usr/local/include/OpenGL
                 fi
                 export CMAKE_PREFIX_PATH="/usr/local/include/OpenGL:$CMAKE_PREFIX_PATH"
+                export OPENGL_gl_LIBRARY="$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Versions/Current/Libraries"
+
+                # export CXXFLAGS="-framework OpenGL"
 
                 export OPENSSL_ROOT_DIR=$(ibrew --prefix openssl)
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix openssl):$CMAKE_PREFIX_PATH"
@@ -700,8 +696,8 @@ function patch_src {
 
     case $distribution in
         melodic | noetic)
-#           cp $catkin/patch/tf2_CMakeLists.txt \
-#              $catkin/src/geometry2/tf2/CMakeLists.txt
+          cp $catkin/patch/tf2_CMakeLists.txt \
+             $catkin/src/geometry2/tf2/CMakeLists.txt
 
 #           cp $catkin/patch/catkinConfig.cmake.in \
 #              $catkin/src/catkin/cmake/catkinConfig.cmake.in
@@ -808,12 +804,12 @@ function build_src {
         }
 
         catkin_make_comp () {
-            opt1="-DCMAKE_FIND_FRAMEWORK=NEVER                            \
-                  -DCMAKE_BUILD_TYPE=Release                              \
+            opt1="-DCMAKE_BUILD_TYPE=Release                              \
                   -DPYTHON_EXECUTABLE=$rosenv/bin/python3                 "
 
             opt2="--cmake-args -DCMAKE_CXX_STANDARD=17                    \
                                -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   \
+                               -DCMAKE_MODULE_PATH="$CMAKE_MODULE_PATH"   \
                                -DCMAKE_CXX_COMPILER="$CXX"                \
                                -DCMAKE_CXX_FLAGS="$CXXFLAGS"              "
 

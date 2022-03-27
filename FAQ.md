@@ -19,7 +19,13 @@
 	- xcode changes OpenGL directory 
 	- ln -s "$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Headers" \
   		/usr/local/include/OpenGL
-  -  export CMAKE_PREFIX_PATH="/usr/local/include/OpenGL:$CMAKE\_PREFIX\_PATH"
+  	- export CMAKE_PREFIX_PATH="/usr/local/include/OpenGL:$CMAKE\_PREFIX\_PATH"
+  
++ rviz
+
+	>  Could NOT find OpenGL (missing: OPENGL_gl_LIBRARY)
+	
+	- 
 	
 # foxy
 ## General
