@@ -6,7 +6,7 @@
 # Author: Hao Feng (F1)
 # Date:   Nov. 22, 2021
 #
-# Copyright (c) 2021, FATAVAY CO., LTD.
+# Copyright (c) 2021-, FATAVAY CO., LTD.
 #-----------------------------------------------------------------------------------
 
 #- set global varialbles
@@ -36,7 +36,7 @@ function print_welcome {
     echo "* ------- "
     echo "* specify ros distribution name ... "
     echo
-    echo  "         ROS1: noetic|melodic "
+    echo  "         ROS1: melodic | noetic "
     echo  "         ROS2: foxy "
     echo
     echo -n " * Please input ros name, [$distribution_default]: "
@@ -811,7 +811,8 @@ function build_src {
                                -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   \
                                -DCMAKE_MODULE_PATH="$CMAKE_MODULE_PATH"   \
                                -DCMAKE_CXX_COMPILER="$CXX"                \
-                               -DCMAKE_CXX_FLAGS="$CXXFLAGS"              "
+                               -DCMAKE_CXX_FLAGS="$CXXFLAGS"              \
+                               -DOPENGL_gl_LIBRARY=$OPENGL_gl_LIBRARY     "                                                                        
 
             # opt3="--make-args  CXXFLAGS="$CXXFLAGS" "
 

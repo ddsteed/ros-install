@@ -19,13 +19,22 @@
 	- xcode changes OpenGL directory 
 	- ln -s "$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Headers" \
   		/usr/local/include/OpenGL
-  	- export CMAKE_PREFIX_PATH="/usr/local/include/OpenGL:$CMAKE\_PREFIX\_PATH"
+  	- export CMAKE\_PREFIX\_PATH="/usr/local/include/OpenGL:$CMAKE\_PREFIX\_PATH"
   
 + rviz
 
-	>  Could NOT find OpenGL (missing: OPENGL_gl_LIBRARY)
+	>  Could NOT find OpenGL (missing: OPENGL\_gl\_LIBRARY)
 	
-	- 
+	- set OPENGL\_gl\_LIBRARY manually
+	
+	  + export OPENGL_gl_LIBRARY="$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Versions/Current/Libraries"
+	  + cmake args: -DOPENGL\_gl\_LIBRARY=$OPEN\_gl\_LIBRARY
+
++ librviz\_tutorial
+
+	> tried to find library 'Cocoa_LIBRARIES-NOTFOUND'.  The library is neither a target nor built/installed properly.
+  
+   - 
 	
 # foxy
 ## General
