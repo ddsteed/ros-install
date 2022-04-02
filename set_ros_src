@@ -125,7 +125,8 @@ function set_auxilary {
             brew_tools
 
             pip_tools
-            src_tools sip pyqt urdfdom ogre log4cxx
+            # src_tools sip pyqt urdfdom ogre log4cxx
+            src_tools urdfdom log4cxx
             ;;
         Linux)
             set_locale
@@ -246,10 +247,10 @@ function brew_tools {
             ibrew tap ros/deps
             ibrew tap osrf/simulation
 
-            lib=(libyaml opencv)
-            lib=(${lib[@]} cmake graphviz qt@5)
+            lib=(libyaml opencv cmake)
             lib=(${lib[@]} orocos-kdl boost boost-python3 gpgme openssl)
-            lib=(${lib[@]} qt5 pyqt5 sip)
+            lib=(${lib[@]} graphviz qt@5 freetype)
+            lib=(${lib[@]} sip ogre1.9)
 
             # log4cxx change smart pointer from which ROS1 could NOT call, so install it manually.
             ibrew uninstall log4cxx -f
@@ -287,8 +288,11 @@ function pip_tools {
             if [[ $os == "Darwin" ]]; then
                 lib=(setuptools rosdep rosinstall_generator wstool rosinstall catkin_tools bloom empy sphinx pycurl)
                 lib=(${lib[@]} vcstool wheel pygraphviz pydot numpy)
+                lib=(${lib[@]} pyqt5 pyqt5-sip)
+         
             elif [[ $os == "Linux" ]]; then
                 lib=(rosdep rosinstall_generator vcstool empy numpy)
+                lib=(${lib[@]} pyqt5 pyqt5-sip)
             fi
             ;;
         foxy)
@@ -299,7 +303,7 @@ function pip_tools {
                             flake8-class-newline flake8-comprehensions flake8-deprecated \
                             flake8-docstrings flake8-import-order flake8-quotes ifcfg \
                             importlib-metadata lark lark-parser lxml mock mypy netifaces \
-                            nose numpy pep8 pydocstyle pydot pygraphviz pyparsing pyqt5\
+                            nose numpy pep8 pydocstyle pydot pygraphviz pyparsing pyqt5 pyqt5-sip \
                             pytest-mock rosdep setuptools vcstool rosdistro)
             elif [[ $os == "Linux" ]]; then
                 lib=(rosdep rosinstall_generator vcstool \
@@ -334,12 +338,12 @@ function pip_tools {
                 echo "----------------------------------------- "
                 echo
                 if [[ $app == pygraphviz ]]; then
-                    pip3 $run $opt $app
+                    pip3 $run $app $opt
                 else
                     pip3 $run -U $app
                 fi
             done
-            
+
             pip3 $run --upgrade setuptools
             ;;
         remove)
@@ -367,6 +371,11 @@ function pip_tools {
 function src_tools {
     source $rosenv/bin/activate
 
+    if [[ `uname` == "Darwin" ]]; then
+        export CC='arch -x86_64 clang'
+        export CXX='arch -x86_64 clang++' 
+    fi
+    
     # set versions
     vsip=4.19.13
     vpyqt=5.11.3
@@ -393,7 +402,11 @@ function src_tools {
                     tar xzf sip-$vsip.tar.gz
                     cd sip-$vsip
                     python3 ./configure.py
-                    make
+                    if [[ `uname` == "Darwin" ]]; then
+                        arch -x86_64 make
+                    else
+                        make
+                    fi
                     make install
                     cd .. && rm -rf sip-$vsip
                 else
@@ -435,7 +448,6 @@ function src_tools {
                 echo "- install pyqt5.sip module ..."
                 echo "  ----------------- "
                 echo
-                pip3 $run -U pyqt5.sip
                 ;;
             urdfdom)
                 # install urdfdom
@@ -470,7 +482,7 @@ function src_tools {
                 echo
                 mkdir -p $rosenv/tmp && cd $rosenv/tmp
 
-                if [[ ! -f "$rosenv/lib/libOgreBitesQt.dylib" && ! -f "$rosenv/lib/libOgreBitesQt.so" ]]; then
+                if [[ ! -d "$rosenv/include/OGRE" ]]; then
                     if [ ! -f "ogre-$vogre.zip" ]; then
                         wget https://codeload.github.com/OGRECave/ogre/zip/refs/tags/v$vogre -O ogre-$vogre.zip
                     fi
@@ -522,11 +534,7 @@ function src_tools {
 
                     mkdir -p build && cd build
 
-                    if [[ `uname` == "Darwin" ]]; then
-                        CC='arch -x86_64 clang' CXX='arch -x86_64 clang++' ../configure --prefix=$rosenv --with-apr=/usr/local/opt/apr --with-apr-util=/usr/local/opt/apr-util
-                    elif [[ `uname` == "Linux" ]]; then
-                        ../configure --prefix=$rosenv --with-apr=/usr/local/opt/apr --with-apr-util=/usr/local/opt/apr-util
-                    fi
+                    ../configure --prefix=$rosenv --with-apr=/usr/local/opt/apr --with-apr-util=/usr/local/opt/apr-util
                     
                     make -j 8
                     set +e; make install; set -e
@@ -584,17 +592,24 @@ function set_env {
                 export CMAKE_PREFIX_PATH="/usr/local/include/OpenGL:$CMAKE_PREFIX_PATH"
                 export OPENGL_gl_LIBRARY="$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Versions/Current/Libraries"
 
-                # export CXXFLAGS="-framework OpenGL"
-
                 export OPENSSL_ROOT_DIR=$(ibrew --prefix openssl)
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix openssl):$CMAKE_PREFIX_PATH"
+                export PATH="${OPENSSL_ROOT_DIR}/bin:$PATH"
+                export LDFLAGS="-L${OPENSSL_ROOT_DIR}/lib $LDFLAGS"
+                export CXXFLAGS="-I${OPENSSL_ROOT_DIR}/include $CXXFLAGS"
+                export PKG_CONFIG_PATH="${OPENSSL_ROOT_DIR}/lib/pkgconfig"
+                export CMAKE_INCLUDE_PATH="${OPENSSL_ROOT_DIR}/include:$CMAKE_INCLUDE_PATH"
 
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
-                export CMAKE_PREFIX_PATH="$(ibrew --prefix qt@5):$CMAKE_PREFIX_PATH"
-                export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
                 export PATH="$(ibrew --prefix opencv)/bin:$PATH"
 
-                export CMAKE_PREFIX_PATH="$rosenv/PyQt5:$CMAKE_PREFIX_PATH"
+                export CMAKE_PREFIX_PATH="$(ibrew --prefix qt@5):$CMAKE_PREFIX_PATH"
+                export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
+
+                export CMAKE_PREFIX_PATH="$(ibrew --prefix ogre1.9):$CMAKE_PREFIX_PATH"
+                export PATH="$(ibrew --prefix ogre1.9)/bin:$PATH"
+         
+                export CXXFLAGS="-w -I$rosenv/include $CXXFLAGS"
 
             elif [[ $os == "Linux" ]]; then
                 export CMAKE_PREFIX_PATH="/usr/include/eigen3:$CMAKE_PREFIX_PATH"
@@ -631,7 +646,7 @@ function set_env {
 
     source $rosenv/bin/activate
     export CMAKE_PREFIX_PATH="$rosenv:$CMAKE_PREFIX_PATH"
-    export CMAKE_PREFIX_PATH="$rosenv/PyQt5:$CMAKE_PREFIX_PATH"
+    export CMAKE_INCLUDE_PATH="$rosenv/include:$CMAKE_INCLUDE_PATH"
     export PATH="$rosenv/bin:$PATH"
 
     echo
@@ -807,11 +822,13 @@ function build_src {
             opt1="-DCMAKE_BUILD_TYPE=Release                              \
                   -DPYTHON_EXECUTABLE=$rosenv/bin/python3                 "
 
-            opt2="--cmake-args -DCMAKE_CXX_STANDARD=17                    \
+            opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                    \
                                -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   \
                                -DCMAKE_MODULE_PATH="$CMAKE_MODULE_PATH"   \
+                               -DCMAKE_INCLUDE_PATH="$CMAKE_INCLUDE_PATH" \
+                               -DCMAKE_FIND_FRAMEWORK=LAST                \
                                -DCMAKE_CXX_COMPILER="$CXX"                \
-                               -DCMAKE_CXX_FLAGS="$CXXFLAGS"              \
+                               -DBOOST_ROOT=$BOOST_ROOT                   \
                                -DOPENGL_gl_LIBRARY=$OPENGL_gl_LIBRARY     "                                                                        
 
             # opt3="--make-args  CXXFLAGS="$CXXFLAGS" "
