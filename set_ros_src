@@ -247,7 +247,8 @@ function brew_tools {
             ibrew tap ros/deps
             ibrew tap osrf/simulation
 
-            lib=(libyaml opencv cmake)
+            lib=(libyaml cmake wget)
+            lib=(${lib[@]} assimp console_bridge opencv poco tinyxml tinyxml2)
             lib=(${lib[@]} orocos-kdl boost boost-python3 gpgme openssl)
             lib=(${lib[@]} graphviz qt@5 freetype)
             lib=(${lib[@]} sip ogre1.9)
@@ -328,9 +329,6 @@ function pip_tools {
             echo "- $run pip packages in $rosenv ... "
             echo "-------- "
 
-            opt="--global-option=build_ext --global-option='-I/usr/local/include/' \
-                 --global-option='-L/usr/local/lib' "
-
             for app in ${lib[@]}; do
                 echo
                 echo "----------------------------------------- "
@@ -338,7 +336,7 @@ function pip_tools {
                 echo "----------------------------------------- "
                 echo
                 if [[ $app == pygraphviz ]]; then
-                    pip3 $run $app $opt
+                    pip3 $run $app --global-option=build_ext --global-option='-I/usr/local/include/' --global-option='-L/usr/local/lib'
                 else
                     pip3 $run -U $app
                 fi

@@ -41,37 +41,16 @@
 	> Failed to find "gl.h"
 	
 	xcode changes OpenGL directory 
-	- ln -s "$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Headers" \
-  		/usr/local/include/OpenGL
+	- ln -s "$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Headers"  /usr/local/include/OpenGL
   	- export CMAKE\_PREFIX\_PATH="/usr/local/include/OpenGL:$CMAKE\_PREFIX\_PATH"
-  
- 	> PyQt5/bindings/QtCore/QtCoremod.sip:23: syntax error
-	
-	- remove "py\_ssize\_t\_clean=True" from your PyQt5/bindings/QtCore/QtCoremod.sip (line 23)
-
-   > ModuleNotFoundError: No module named 'sipconfig'
-   
-   - install sip==4.19.13 from source
     
-   > CMake Error at qt_gui_core/qt_gui_cpp/src/CMakeLists.txt:10 (message):
-  No Python binding generator found.
-    
-   - comment "message(FATAL_ERROR "No Python binding generator found.")"
-   
-   like,
-   ```
-   if(NOT qt_gui_cpp_BINDINGS)
-          \# message(FATAL_ERROR "No Python binding generator found.")
-   	endif()
-   	```
-  
 + rviz
 
 	>  Could NOT find OpenGL (missing: OPENGL\_gl\_LIBRARY)
 	
 	- set OPENGL\_gl\_LIBRARY manually
 	
-	  + export OPENGL_gl_LIBRARY="$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Versions/Current/Libraries"
+	  + export OPENGL\_gl\_LIBRARY="$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Versions/Current/Libraries"
 	  + cmake args: -DOPENGL\_gl\_LIBRARY=$OPEN\_gl\_LIBRARY
 
 	+ vision\_opencv/cv_bridge
@@ -80,8 +59,12 @@
 
 	"make.h" defines BOOST\_PREDEF\_MAKE\_10\_VVPPP macro which is defined by "version.h" while "cxx.h" does NOT include correctly.
 	
-	- \#include "../../version_number.h"
-	- \#include "../../make.h"
+	In "cxx.h", add
+	
+	- \#define BOOST\_VERSION\_NUMBER(major,minor,patch) \\
+    ( (((major)%100)*10000000) + (((minor)%100)*100000) + ((patch)%100000) )
+    
+   - \#define BOOST\_PREDEF\_MAKE\_10\_VVPPP(V) BOOST\_VERSION\_NUMBER(((V)/1000)%100,0,(V)%1000)
 
 	
 # foxy
