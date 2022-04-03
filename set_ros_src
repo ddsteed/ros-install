@@ -123,18 +123,15 @@ function set_auxilary {
     case $os in
         Darwin)
             brew_tools
-
             pip_tools
-            # src_tools sip pyqt urdfdom ogre log4cxx
             src_tools urdfdom log4cxx
             ;;
         Linux)
             set_locale
             add_apt_repository
             apt_tools
-
             pip_tools
-            src_tools sip pyqt urdfdom ogre log4cxx
+            src_tools urdfdom log4cxx
             ;;
     esac
 }
@@ -358,13 +355,12 @@ function pip_tools {
 }
 
 #-----------------------------------------------------------------------------------
-# 1. some tools/libraries, like sip/PyQt/urdfdom could NOT be found or called properly
+# 1. some tools/libraries, like urdfdom could NOT be found or called properly
 #    if installed by brew/apt, so they have to be installed manually.
 # 2. log4cxx adds shared_ptr since 0.12.0, which could be used ONLY for ROS2-rosconsole.
 #    However, ROS1-rosconsole use ordinary pointer, so log4cxx with lower version has to
 #    be installed manually for ROS1.
 #
-# sip/PyQt/urdfdom/OGRE/log4cxx
 
 function src_tools {
     source $rosenv/bin/activate
@@ -393,25 +389,29 @@ function src_tools {
 
                 if [[ ! -f $rosenv/bin/sip ]]; then
                     if [ ! -f "sip-$vsip.tar.gz" ]; then
-#                       wget https://sourceforge.net/projects/pyqt/files/sip/sip-$vsip/sip-$vsip.tar.gz
                         wget https://distfiles.macports.org/py-sip/sip-$vsip.tar.gz
                     fi
 
                     tar xzf sip-$vsip.tar.gz
                     cd sip-$vsip
+
                     python3 ./configure.py
+
                     if [[ `uname` == "Darwin" ]]; then
                         arch -x86_64 make
                     else
                         make
                     fi
+
                     make install
+
                     cd .. && rm -rf sip-$vsip
                 else
                     echo "  - sip has been installed."
                     echo
                 fi
                 ;;
+
             pyqt)
                 # install pyqt
                 echo 
@@ -435,6 +435,7 @@ function src_tools {
                     yes yes | python3 ./configure.py --sip $rosenv/bin/sip --destdir $rosenv
                     make -j 8
                     make install
+
                     cd .. && rm -rf PyQt5_gpl-$vpyqt
                 else
                     echo "  - PyQt has been installed."
@@ -447,6 +448,7 @@ function src_tools {
                 echo "  ----------------- "
                 echo
                 ;;
+
             urdfdom)
                 # install urdfdom
                 echo 
@@ -462,6 +464,7 @@ function src_tools {
 
                     unzip urdfdom-$vurdfdom.zip
                     cd urdfdom-$vurdfdom && mkdir -p build && cd build
+
                     cmake -DCMAKE_INSTALL_PREFIX=$rosenv ..
                     make -j 8
                     make install
@@ -472,6 +475,7 @@ function src_tools {
                     echo
                 fi
                 ;;
+
             ogre)
                 # install OGRE
                 echo 
@@ -507,6 +511,7 @@ function src_tools {
                     echo
                 fi
                 ;;
+
             log4cxx)
                 # install log4cxx
                 echo 
@@ -578,7 +583,7 @@ function set_env {
     case $distribution in
         melodic | noetic)
             if [[ $os == "Darwin" ]]; then
-                # for OpenGL
+
                 if [[ ! -d /usr/local/include/OpenGL ]]; then
                     ln -s "$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Headers" \
                        /usr/local/include/OpenGL
@@ -586,13 +591,9 @@ function set_env {
                 export CMAKE_PREFIX_PATH="/usr/local/include/OpenGL:$CMAKE_PREFIX_PATH"
                 export OPENGL_gl_LIBRARY="$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Versions/Current/Libraries"
 
-                export OPENSSL_ROOT_DIR=$(ibrew --prefix openssl)
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix openssl):$CMAKE_PREFIX_PATH"
-                export PATH="${OPENSSL_ROOT_DIR}/bin:$PATH"
-                export LDFLAGS="-L${OPENSSL_ROOT_DIR}/lib $LDFLAGS"
+                export OPENSSL_ROOT_DIR=$(ibrew --prefix openssl)
                 export CXXFLAGS="-I${OPENSSL_ROOT_DIR}/include $CXXFLAGS"
-                export PKG_CONFIG_PATH="${OPENSSL_ROOT_DIR}/lib/pkgconfig"
-                export CMAKE_INCLUDE_PATH="${OPENSSL_ROOT_DIR}/include:$CMAKE_INCLUDE_PATH"
 
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
                 export PATH="$(ibrew --prefix opencv)/bin:$PATH"
@@ -620,9 +621,10 @@ function set_env {
                 export PATH="/usr/local/opt/bison/bin:$PATH"
 
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
+                export PATH="$(ibrew --prefix opencv)/bin:$PATH"
+
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix qt@5):$CMAKE_PREFIX_PATH"
                 export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
-                export PATH="$(ibrew --prefix opencv)/bin:$PATH"
 
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix assimp):$CMAKE_PREFIX_PATH"
                 export PATH="$(ibrew --prefix assimp)/bin:$PATH"

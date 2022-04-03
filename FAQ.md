@@ -34,7 +34,8 @@
 	> no viable conversion from normal pointer to smart shared_ptr
   
    log4cxx 0.12.0 upgrade pointer to smart one, so one has to install 0.10.0 version and link it manually. (do NOT use brew version.)
-   - brew uninstall default log4cxx since catkin\_make's find_package will search system firstly.
+   - brew uninstall default log4cxx since catkin\_make's find_package will search system firstly
+   - install log4cxx 0.10.0 from source
    
 + qt\_gui\_cpp
 
@@ -42,12 +43,9 @@
 	
 	xcode changes OpenGL directory 
 
-	```
-	ln -s "$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Headers"  /usr/local/include/OpenGL
-	
-
-  	export CMAKE_PREFIX_PATH="/usr/local/include/OpenGL:$CMAKE_PREFIX_PATH"
-  	
+	```bash
+	ln -s "$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Headers"  /usr/local/include/OpenGL	
+	export CMAKE_PREFIX_PATH="/usr/local/include/OpenGL:$CMAKE_PREFIX_PATH"
   	```
     
 + rviz
@@ -56,15 +54,15 @@
 	
 	- set OPENGL\_gl\_LIBRARY manually
 
-		+ 
+		+ in set\_env function:
 
-		```
+		```bash
 	  export OPENGL_gl_LIBRARY="$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Versions/Current/Libraries"
 	  ```
 
-	   + cmake args: 
+	   + in catkin\_make\_comp function, add cmake args: 
 	   
-	  	```
+	  	```bash
 	  	-DOPENGL_gl_LIBRARY=$OPEN_gl_LIBRARY
 	  	```
 
@@ -76,7 +74,7 @@
 	
 	- In "cxx.h", add
 	
-		```
+		```cpp
 		 #define BOOST_VERSION_NUMBER(major,minor,patch) \
 		   	 ( (((major)%100)*10000000) + (((minor)%100)*100000) + ((patch)%100000) )
 	   	 
@@ -100,7 +98,8 @@
 	> library_abs NOTFOUND under Linux
    
 	- 
-	```
+
+	```bash
    apt install foxy_desktop
    ```
 
@@ -120,7 +119,7 @@ CMake Error at src/CMakeLists.txt:10 (message):
   
   - removed the error in ros-visualization/qt\_gui\_core/qt\_gui\_cpp/src/CMakeLists.txt:
 
-		```
+		```cpp
 		message(STATUS "Python binding generators: ${qt_gui_cpp_BINDINGS}")
 		if(NOT qt_gui_cpp_BINDINGS)
 		  # message(FATAL_ERROR "No Python binding generator found.")
@@ -133,6 +132,7 @@ CMake Error at src/CMakeLists.txt:10 (message):
 	
 	close all warning messages since ROS is compiled by non-ISO C++-11
 	- add 
-	```
+
+	```bash
 	CXXFLAGS="-w" 
 	```
