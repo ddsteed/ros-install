@@ -192,7 +192,7 @@ function apt_tools {
     case $distribution in
         melodic | noetic)
             lib=(python3-rosdep python3-rosinstall-generator python3-vcstool \
-                     build-essential liborocos-kdl-dev libogre-1.12 liblog4cxx-dev \
+                     build-essential liborocos-kdl-dev libogre-1.12 \
                      libgpgme-dev liburdfdom-dev) 
 
             # X org dependencies
@@ -200,7 +200,7 @@ function apt_tools {
             ;;
         foxy)
             lib=(build-essential \
-                     cmake git libbullet-dev liblog4cxx-dev libeigen3-dev \
+                     cmake git libbullet-dev libeigen3-dev \
                      libboost-all-dev libbz2-dev \
                      librosconsole-bridge-dev libpoco-doc libpoco-dev \
                      libtinyxml-dev libtinyxml-doc \
@@ -264,7 +264,6 @@ function brew_tools {
             
             lib=(${lib[@]} console_bridge)       # console_bridge for rosbag2
             lib=(${lib[@]} openssl)              # OpenSSL for DDS-Security
-            # lib=(${lib[@]} log4cxx spdlog)       # dependencies for rcl_logging
             lib=(${lib[@]} spdlog)               # dependencies for rcl_logging
             lib=(${lib[@]} bison cunit)          # dependencies for Cyclone DDS
             lib=(${lib[@]} qt@5 freetype assimp) # dependencies for Rviz
@@ -510,10 +509,6 @@ function src_tools {
                 ;;
             log4cxx)
                 # install log4cxx
-                if [[ $distribution == foxy ]]; then
-                    continue
-                fi
-                
                 echo 
                 echo "- install log4cxx manually ..."
                 echo "  --------------- "
@@ -628,8 +623,6 @@ function set_env {
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix qt@5):$CMAKE_PREFIX_PATH"
                 export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
                 export PATH="$(ibrew --prefix opencv)/bin:$PATH"
-
-                export CMAKE_PREFIX_PATH="$(ibrew --prefix log4cxx):$CMAKE_PREFIX_PATH"
 
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix assimp):$CMAKE_PREFIX_PATH"
                 export PATH="$(ibrew --prefix assimp)/bin:$PATH"
