@@ -264,7 +264,8 @@ function brew_tools {
             
             lib=(${lib[@]} console_bridge)       # console_bridge for rosbag2
             lib=(${lib[@]} openssl)              # OpenSSL for DDS-Security
-            lib=(${lib[@]} log4cxx spdlog)       # dependencies for rcl_logging
+            # lib=(${lib[@]} log4cxx spdlog)       # dependencies for rcl_logging
+            lib=(${lib[@]} spdlog)               # dependencies for rcl_logging
             lib=(${lib[@]} bison cunit)          # dependencies for Cyclone DDS
             lib=(${lib[@]} qt@5 freetype assimp) # dependencies for Rviz
             lib=(${lib[@]} graphviz sip)         # rqt dependencies
@@ -633,6 +634,9 @@ function set_env {
                 export CMAKE_PREFIX_PATH="$(ibrew --prefix assimp):$CMAKE_PREFIX_PATH"
                 export PATH="$(ibrew --prefix assimp)/bin:$PATH"
 
+                export CMAKE_PREFIX_PATH="$(ibrew --prefix ogre1.9):$CMAKE_PREFIX_PATH"
+                export PATH="$(ibrew --prefix ogre1.9)/bin:$PATH"
+         
                 # close all warning messages since ROS is compiled by non-ISO C++-11
                 export CXXFLAGS="-w "
             elif [[ $os == "Linux" ]]; then

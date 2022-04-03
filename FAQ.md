@@ -41,17 +41,32 @@
 	> Failed to find "gl.h"
 	
 	xcode changes OpenGL directory 
-	- ln -s "$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Headers"  /usr/local/include/OpenGL
-  	- export CMAKE\_PREFIX\_PATH="/usr/local/include/OpenGL:$CMAKE\_PREFIX\_PATH"
+
+	```
+	ln -s "$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Headers"  /usr/local/include/OpenGL
+	
+
+  	export CMAKE_PREFIX_PATH="/usr/local/include/OpenGL:$CMAKE_PREFIX_PATH"
+  	
+  	```
     
 + rviz
 
 	>  Could NOT find OpenGL (missing: OPENGL\_gl\_LIBRARY)
 	
 	- set OPENGL\_gl\_LIBRARY manually
-	
-	  + export OPENGL\_gl\_LIBRARY="$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Versions/Current/Libraries"
-	  + cmake args: -DOPENGL\_gl\_LIBRARY=$OPEN\_gl\_LIBRARY
+
+		+ 
+
+		```
+	  export OPENGL_gl_LIBRARY="$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/OpenGL.framework/Versions/Current/Libraries"
+	  ```
+
+	   + cmake args: 
+	   
+	  	```
+	  	-DOPENGL_gl_LIBRARY=$OPEN_gl_LIBRARY
+	  	```
 
 	+ vision\_opencv/cv_bridge
 
@@ -59,14 +74,15 @@
 
 	"make.h" defines BOOST\_PREDEF\_MAKE\_10\_VVPPP macro which is defined by "version.h" while "cxx.h" does NOT include correctly.
 	
-	In "cxx.h", add
+	- In "cxx.h", add
 	
-	- \#define BOOST\_VERSION\_NUMBER(major,minor,patch) \\
-    ( (((major)%100)*10000000) + (((minor)%100)*100000) + ((patch)%100000) )
-    
-   - \#define BOOST\_PREDEF\_MAKE\_10\_VVPPP(V) BOOST\_VERSION\_NUMBER(((V)/1000)%100,0,(V)%1000)
+		```
+		 #define BOOST_VERSION_NUMBER(major,minor,patch) \
+		   	 ( (((major)%100)*10000000) + (((minor)%100)*100000) + ((patch)%100000) )
+	   	 
+	   	 #define BOOST_PREDEF_MAKE_10_VVPPP(V)  BOOST_VERSION_NUMBER(((V)/1000)%100,0,(V)%1000)
+  		```
 
-	
 # foxy
 ## General
 
@@ -83,13 +99,40 @@
 
 	> library_abs NOTFOUND under Linux
    
-   - apt install foxy_desktop
+	- 
+	```
+   apt install foxy_desktop
+   ```
 
 
 ## MAC
++ qt\_gui\_cpp
+
+	> CMake Warning at /opt/ros/foxy\_src/install/python\_qt\_binding/share/python\_qt\_binding/cmake/sip\_helper.cmake:27 (message):
+	
+  	> SIP binding generator NOT available.
+Call Stack (most recent call first):
+  src/qt\_gui\_cpp\_sip/CMakeLists.txt:56 (include)
+
+	> Python binding generators:
+CMake Error at src/CMakeLists.txt:10 (message):
+  No Python binding generator found.
+  
+  - removed the error in ros-visualization/qt\_gui\_core/qt\_gui\_cpp/src/CMakeLists.txt:
+
+		```
+		message(STATUS "Python binding generators: ${qt_gui_cpp_BINDINGS}")
+		if(NOT qt_gui_cpp_BINDINGS)
+		  # message(FATAL_ERROR "No Python binding generator found.")
+		endif()
+		```
+
 + rcpputils
 
 	> gtest-matchers.h:739:3: error: definition of implicit copy constructor for 'MatchesRegexMatcher' is deprecated because it has a user-declared copy assignment operator [-Werror,-Wdeprecated-copy]
 	
 	close all warning messages since ROS is compiled by non-ISO C++-11
-	- add CXXFLAGS="-w" 
+	- add 
+	```
+	CXXFLAGS="-w" 
+	```
