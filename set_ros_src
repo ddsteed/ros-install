@@ -312,8 +312,26 @@ function conda_tools {
             if [[ ! -d $rosenv ]]; then
                 conda create -y --prefix $rosenv python=3.8
                 conda activate $rosenv
-                conda config --env --add channels conda-forge
-                conda config --env --set channel_priority strict
+
+                # conda config --env --add channels conda-forge
+                # conda config --env --set channel_priority strict
+
+                echo "show_channel_urls: true                                            " >  $rosenv/.condarc
+                echo "default_channels:                                                  " >> $rosenv/.condarc
+                echo "  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main        " >> $rosenv/.condarc
+                echo "  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free        " >> $rosenv/.condarc
+                echo "  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/r           " >> $rosenv/.condarc
+                echo "custom_channels:                                                   " >> $rosenv/.condarc
+                echo "  conda-forge: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud " >> $rosenv/.condarc
+                echo "  msys2: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud       " >> $rosenv/.condarc
+                echo "  bioconda: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud    " >> $rosenv/.condarc
+                echo "  menpo: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud       " >> $rosenv/.condarc
+                echo "  pytorch: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud     " >> $rosenv/.condarc
+                echo "  simpleitk: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud   " >> $rosenv/.condarc
+                echo "channels:                                                          " >> $rosenv/.condarc
+                echo "  - conda-forge                                                    " >> $rosenv/.condarc
+                echo "  - defaults                                                       " >> $rosenv/.condarc
+               
                 conda install -y mamba
             fi
             
