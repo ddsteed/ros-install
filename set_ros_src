@@ -131,7 +131,7 @@ function set_auxilary {
             add_apt_repository
             apt_tools
             pip_tools
-            src_tools sip urdfdom
+            src_tools urdfdom log4cxx
             ;;
     esac
 }
@@ -313,7 +313,7 @@ function pip_tools {
                             flake8-blind-except flake8-builtins flake8-class-newline \
                             flake8-comprehensions flake8-deprecated flake8-docstrings \
                             flake8-import-order flake8-quotes \
-                            lark numpy pyqt5 \
+                            lark numpy pyqt5 pyqt5-sip \
                             pytest-repeat pytest-rerunfailures pytest)
             fi
             ;;
@@ -762,14 +762,7 @@ function build_src {
     export install_base=$bipath/install
     export devel_base=$bipath/devel
 
-    # mkdir -p $build_base
-    # mkdir -p $install_base
-    # if [[ $distribution == "noetic" ]]; then
-    #     mkdir -p $devel_base
-    # fi
-
     if [[ $os == "Linux" ]]; then
-#               --packages-skip-by-dep python_qt_binding              \
         colcon_comp () {
             opt1="--log-base /dev/null                                    \
                   build                                                   \
@@ -778,9 +771,10 @@ function build_src {
                   --install-base $install_base                            \
                   --event-handlers console_direct+                        "
             
-            opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                    \
+            opt2="--cmake-args -DCMAKE_CXX_STANDARD=17                    \
                                -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   \
-                               -DCMAKE_SHARED_LINKER_FLAGS=$LDFLAGS       "
+                               -DCMAKE_CXX_COMPILER="$CXX"                \
+                               -DCMAKE_CXX_FLAGS="$CXXFLAGS"              "
 
             colcon $opt1 $@ $opt2
         }

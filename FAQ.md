@@ -106,6 +106,10 @@
 
 	> ModuleNotFoundError: No module named 'sipconfig'
 	
+	SIP v5 will not include an extensible build system, i.e it will not provide an equivalent of SIP v4’s sipconfig module. Consequently a version of PyQt built with SIP v5 will not provide an equivalent of the pyqtconfig module.
+	
+	However, this error does NOT occur in MAC.
+	
 	- 
 
 ## MAC
