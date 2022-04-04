@@ -102,7 +102,11 @@
 	```bash
    apt install foxy_desktop
    ```
++ qt\_gui\_cpp
 
+	> ModuleNotFoundError: No module named 'sipconfig'
+	
+	- 
 
 ## MAC
 + qt\_gui\_cpp

@@ -131,7 +131,7 @@ function set_auxilary {
             add_apt_repository
             apt_tools
             pip_tools
-            src_tools urdfdom log4cxx
+            src_tools urdfdom
             ;;
     esac
 }
@@ -194,6 +194,8 @@ function apt_tools {
 
             # X org dependencies
             lib=(${lib[@]} xorg-dev libxrandr-dev libxcursor-dev)
+
+            lib=(${lib[@]} liblog4cxx-dev)
             ;;
         foxy)
             lib=(build-essential \
@@ -216,6 +218,8 @@ function apt_tools {
 
             # X org dependencies
             lib=(${lib[@]} xorg-dev libxrandr-dev libxcursor-dev)
+
+            lib=(${lib[@]} liblog4cxx-dev)
             ;;
     esac
 
