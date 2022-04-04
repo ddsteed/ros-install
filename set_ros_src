@@ -209,7 +209,7 @@ function apt_tools {
                      python3-pip python3-pytest-cov python3-rosdep \
                      python-sip python-sip-dev python-sip-doc python-sip-dbg \
                      python3-setuptools python3-vcstool python3-venv \
-                     qt5-default)
+                     atcreator qt5-default)
 
             # install Fast-RTPS dependencies
             lib=(${lib[@]} libasio-dev libtinyxml2-dev)
@@ -644,6 +644,7 @@ function set_env {
             elif [[ $os == "Linux" ]]; then
                 export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:/usr/include/eigen3"
                 export CXXFLAGS="-w -I/usr/include/x86_64-linux-gnu/qt5 $CXXFLAGS"
+                export PATH="/usr/lib/qt5/bin:$PATH"
                 export LDFLAGS="-latomic $LDFLAGS"
             fi
             ;;
