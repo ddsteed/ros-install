@@ -113,6 +113,14 @@
 	- install sip 4.19 from source
 	- install sip 4.19 through conda
 
+	>  fatal error: 'qcborcommon.h' file not found
+
+	- 
+
+	```bash
+	sudo ln -s /usr/include/x86_64-linux-gnu/qt5/QtCore/qc* /usr/include/x86_64-linux-gnu/qt5
+	```
+
 ## MAC
 + qt\_gui\_cpp
 

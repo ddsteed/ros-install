@@ -123,7 +123,8 @@ function set_auxilary {
     case $os in
         Darwin)
             brew_tools
-            pip_tools
+            # pip_tools
+            conda_tools
             src_tools urdfdom log4cxx
             ;;
         Linux)
@@ -280,6 +281,82 @@ function brew_tools {
     
     ibrew $run ${lib[@]} $opt1 $opt2
 }
+
+#-----------------------------------------------------------------------------------
+function conda_tools {
+    echo
+    echo "* ------- "
+    echo "* conda $run some stuff ... "
+    echo
+
+    source /opt/miniconda3/etc/profile.d/conda.sh
+    case $distribution in
+        melodic | noetic)
+            if [[ $os == "Darwin" ]]; then
+                lib=(setuptools rosdep rosinstall_generator wstool rosinstall catkin_tools bloom empy sphinx pycurl)
+                lib=(${lib[@]} vcstool wheel pygraphviz pydot numpy)
+                lib=(${lib[@]} pyqt5 pyqt5-sip)
+         
+            elif [[ $os == "Linux" ]]; then
+                lib=(rosdep rosinstall_generator vcstool empy numpy)
+                lib=(${lib[@]} pyqt5 pyqt5-sip)
+            fi
+            ;;
+        foxy)
+            if [[ $os == "Darwin" ]]; then
+                lib=(rosdep rosinstall_generator vcstool \
+                            argcomplete catkin_pkg colcon-common-extensions coverage \
+                            cryptography empy flake8 flake8-blind-except flake8-builtins \
+                            flake8-class-newline flake8-comprehensions flake8-deprecated \
+                            flake8-docstrings flake8-import-order flake8-quotes ifcfg \
+                            importlib-metadata lark lark-parser lxml mock mypy netifaces \
+                            nose numpy pep8 pydocstyle pydot pygraphviz pyparsing pyqt5 pyqt5-sip \
+                            pytest-mock rosdep setuptools vcstool rosdistro)
+            elif [[ $os == "Linux" ]]; then
+                lib=(rosdep rosinstall_generator vcstool \
+                            argcomplete catkin_pkg empy \
+                            flake8-blind-except flake8-builtins flake8-class-newline \
+                            flake8-comprehensions flake8-deprecated flake8-docstrings \
+                            flake8-import-order flake8-quotes \
+                            lark numpy pyqt5 pyqt5-sip \
+                            pytest-repeat pytest-rerunfailures pytest)
+            fi
+            ;;
+    esac
+    
+    case $run in
+        install)
+            echo "- create virtual ros environment ..."
+
+            if [[ ! -d $rosenv ]]; then
+                conda create -y --prefix $rosenv python=3.8
+                conda activate $rosenv
+                conda config --env --add channels conda-forge
+                conda config --env --set channel_priority strict
+                conda install -y mamba
+            fi
+            
+            conda activate $rosenv
+
+            echo 
+            echo "- $run conda packages in $rosenv ... "
+            echo "----------------------------------------- "
+            echo " ... ${lib[@]} ... "
+            echo "----------------------------------------- "
+            echo
+            mamba $run -y ${lib[@]}
+            ;;
+        remove)
+            echo "- $run conda packages in $rosenv ... "
+            echo "  -------- "
+            echo
+
+            echo "- delete virtual ros environment $rosenv ... "
+            rm -rf $rosenv
+            ;;
+    esac
+}
+
 
 #-----------------------------------------------------------------------------------
 function pip_tools {
