@@ -196,6 +196,7 @@ function apt_tools {
             lib=(${lib[@]} xorg-dev libxrandr-dev libxcursor-dev)
 
             lib=(${lib[@]} liblog4cxx-dev)
+            lib=(${lib[@]} clang)
             ;;
         foxy)
             lib=(build-essential \
@@ -220,6 +221,8 @@ function apt_tools {
             lib=(${lib[@]} xorg-dev libxrandr-dev libxcursor-dev)
 
             lib=(${lib[@]} liblog4cxx-dev)
+            lib=(${lib[@]} liburdfdom-dev)
+            lib=(${lib[@]} clang)
             ;;
     esac
 
