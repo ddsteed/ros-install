@@ -17,6 +17,7 @@ export rosbin=/opt/ros
 export distribution_default=foxy
 export run_default=install
 export rosenv_default=envtools
+export envmethod_default=conda
 export step_default=compile
 export compiler_default=clang
 export package_default=all
@@ -84,6 +85,11 @@ function print_welcome {
     echo -n "* Please input the ros virtual environment directory, [$bipath/../$rosenv_default]: "
     read rosenv
     if [[ $rosenv == "" ]]; then export rosenv=$bipath/../$rosenv_default; fi
+    echo
+    echo "* ------- "
+    echo -n "* Please input the ros virtual environment method: conda/pip, [$envmethod_default]: "
+    read envmethod
+    if [[ $envmethod == "" ]]; then export envmethod=$envmethod_default; fi
         
     # ---
     if [[ $step == "all" || $step == "compile" ]]; then
@@ -123,16 +129,13 @@ function set_auxilary {
     case $os in
         Darwin)
             brew_tools
-            # pip_tools
-            # src_tools urdfdom log4cxx
-            conda_tools
+            env_tools
             ;;
         Linux)
             set_locale
             add_apt_repository
             apt_tools
-            pip_tools
-            src_tools urdfdom
+            env_tools
             ;;
     esac
 }
@@ -282,6 +285,22 @@ function brew_tools {
     ibrew $run ${lib[@]} $opt1 $opt2
 }
 
+#-----------------------------------------------------------------------------------
+function env_tools {
+    if [[ $envmethod == "pip" ]]; then
+        pip_tools
+
+        if [[ $os == "Darwin" ]]; then
+            src_tools urdfdom log4cxx
+        elif [[ $os == "Linux" ]]; then
+            src_tools urdfdom
+        fi
+
+    elif [[ $envmethod == "conda" ]]; then
+        conda_tools
+    fi
+}
+ 
 #-----------------------------------------------------------------------------------
 function conda_tools {
     echo
@@ -659,6 +678,12 @@ function set_compiler {
 #-----------------------------------------------------------------------------------
 
 function set_env {
+
+    # for pip environment
+    source $rosenv/bin/activate
+
+    # for conda environment
+    
     case $distribution in
         melodic | noetic)
             if [[ $os == "Darwin" ]]; then
@@ -721,7 +746,6 @@ function set_env {
             ;;
     esac
 
-    source $rosenv/bin/activate
     export CMAKE_PREFIX_PATH="$rosenv:$CMAKE_PREFIX_PATH"
     export CMAKE_INCLUDE_PATH="$rosenv/include:$CMAKE_INCLUDE_PATH"
     export PATH="$rosenv/bin:$PATH"
@@ -736,8 +760,6 @@ function set_env {
     echo "     - CXXFLAGS:           $CXXFLAGS"
     echo "     - PYTHON ENV:         $rosenv "
     echo
-
-    source $rosenv/bin/activate
 }
 
 #-----------------------------------------------------------------------------------
