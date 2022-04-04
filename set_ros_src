@@ -909,3 +909,4 @@ if [[ $step == "all" || $step == "compile" ]]; then
     patch_src
     build_src
 fi
+
