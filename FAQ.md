@@ -110,7 +110,8 @@
 	
 	However, this error does NOT occur in MAC.
 	
-	- 
+	- install sip 4.19 from source
+	- install sip 4.19 through conda
 
 ## MAC
 + qt\_gui\_cpp

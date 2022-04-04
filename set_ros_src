@@ -643,8 +643,7 @@ function set_env {
                 export CXXFLAGS="-w "
             elif [[ $os == "Linux" ]]; then
                 export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:/usr/include/eigen3"
-                export CMAKE_INCLUDE_PATH="$CMAKE_INCLUDE_PATH:/usr/include/x86_64-linux-gnu/qt5"
-                # export CXXFLAGS="-w -I/usr/include/x86_64-linux-gnu/qt5 $CXXFLAGS"
+                export CXXFLAGS="-w -I/usr/include/x86_64-linux-gnu/qt5 $CXXFLAGS"
                 export LDFLAGS="-latomic $LDFLAGS"
             fi
             ;;
@@ -782,9 +781,7 @@ function build_src {
             
             opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                    \
                                -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   \
-                               -DCMAKE_INCLUDE_PATH="$CMAKE_INCLUDE_PATH" \
-                               -DCMAKE_CXX_COMPILER="$CXX"                \
-                               -DCMAKE_CXX_FLAGS="$CXXFLAGS"              "
+                               -DCMAKE_CXX_COMPILER="$CXX"                "
 
             colcon $opt1 $@ $opt2
         }
