@@ -14,7 +14,7 @@
 export roshome=/Users/fengh/Research/ROS
 export rosbin=/opt/ros
 
-export distribution_default=noetic
+export distribution_default=foxy
 export run_default=install
 export rosenv_default=envtools
 export step_default=compile
