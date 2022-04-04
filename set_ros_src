@@ -778,7 +778,7 @@ function build_src {
                   --install-base $install_base                            \
                   --event-handlers console_direct+                        "
             
-            opt2="--cmake-args -DCMAKE_CXX_STANDARD=17                    \
+            opt2="--cmake-args -DCMAKE_CXX_STANDARD=14                    \
                                -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"   \
                                -DCMAKE_CXX_COMPILER="$CXX"                \
                                -DCMAKE_CXX_FLAGS="$CXXFLAGS"              "
