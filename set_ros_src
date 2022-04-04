@@ -131,7 +131,7 @@ function set_auxilary {
             add_apt_repository
             apt_tools
             pip_tools
-            src_tools urdfdom
+            src_tools sip urdfdom
             ;;
     esac
 }
