@@ -643,8 +643,8 @@ function set_env {
                 export CXXFLAGS="-w "
             elif [[ $os == "Linux" ]]; then
                 export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:/usr/include/eigen3"
-                # export CMAKE_INCLUDE_PATH="$CMAKE_INCLUDE_PATH:/usr/include/x86_64-linux-gnu/qt5"
-                export CXXFLAGS="-w -I/usr/include/x86_64-linux-gnu/qt5 $CXXFLAGS"
+                export CMAKE_INCLUDE_PATH="$CMAKE_INCLUDE_PATH:/usr/include/x86_64-linux-gnu/qt5"
+                # export CXXFLAGS="-w -I/usr/include/x86_64-linux-gnu/qt5 $CXXFLAGS"
                 export LDFLAGS="-latomic $LDFLAGS"
             fi
             ;;
