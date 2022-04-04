@@ -347,10 +347,6 @@ function conda_tools {
             mamba $run -y ${lib[@]}
             ;;
         remove)
-            echo "- $run conda packages in $rosenv ... "
-            echo "  -------- "
-            echo
-
             echo "- delete virtual ros environment $rosenv ... "
             rm -rf $rosenv
             ;;
