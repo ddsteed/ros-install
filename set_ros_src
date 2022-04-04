@@ -131,7 +131,7 @@ function set_auxilary {
             add_apt_repository
             apt_tools
             pip_tools
-            src_tools urdfdom log4cxx
+            src_tools urdfdom
             ;;
     esac
 }
@@ -716,7 +716,11 @@ function patch_src {
              $catkin/src/geometry2/tf2/CMakeLists.txt
 
 #           cp $catkin/patch/catkinConfig.cmake.in \
-#              $catkin/src/catkin/cmake/catkinConfig.cmake.in
+          #              $catkin/src/catkin/cmake/catkinConfig.cmake.in
+
+          cp $catkin/patch/boost-cxx.h \
+             /usr/local/include/boost/predef/library/std/cxx.h
+          
             ;;
         foxy)
             cp $catkin/patch/rviz_assimp_vendor-extras.cmake.in  \
