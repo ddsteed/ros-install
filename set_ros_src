@@ -124,8 +124,8 @@ function set_auxilary {
         Darwin)
             brew_tools
             # pip_tools
+            # src_tools urdfdom log4cxx
             conda_tools
-            src_tools urdfdom log4cxx
             ;;
         Linux)
             set_locale
@@ -290,39 +290,20 @@ function conda_tools {
     echo
 
     source /opt/miniconda3/etc/profile.d/conda.sh
-    case $distribution in
-        melodic | noetic)
-            if [[ $os == "Darwin" ]]; then
-                lib=(setuptools rosdep rosinstall_generator wstool rosinstall catkin_tools bloom empy sphinx pycurl)
-                lib=(${lib[@]} vcstool wheel pygraphviz pydot numpy)
-                lib=(${lib[@]} pyqt5 pyqt5-sip)
-         
-            elif [[ $os == "Linux" ]]; then
-                lib=(rosdep rosinstall_generator vcstool empy numpy)
-                lib=(${lib[@]} pyqt5 pyqt5-sip)
-            fi
-            ;;
-        foxy)
-            if [[ $os == "Darwin" ]]; then
-                lib=(rosdep rosinstall_generator \
-                            argcomplete catkin_pkg colcon-common-extensions coverage \
-                            cryptography empy flake8 flake8-blind-except flake8-builtins \
-                            flake8-class-newline flake8-comprehensions flake8-deprecated \
-                            flake8-docstrings flake8-import-order flake8-quotes ifcfg \
-                            importlib-metadata lark lark-parser lxml mock mypy netifaces \
-                            nose numpy pep8 pydocstyle pydot pygraphviz pyparsing pyqt5 pyqt5-sip \
-                            pytest-mock rosdep setuptools vcstool rosdistro)
-            elif [[ $os == "Linux" ]]; then
-                lib=(rosdep rosinstall_generator vcstool \
-                            argcomplete catkin_pkg empy \
-                            flake8-blind-except flake8-builtins flake8-class-newline \
-                            flake8-comprehensions flake8-deprecated flake8-docstrings \
-                            flake8-import-order flake8-quotes \
-                            lark numpy pyqt5 pyqt5-sip \
-                            pytest-repeat pytest-rerunfailures pytest)
-            fi
-            ;;
-    esac
+
+    lib=(rosdep rosinstall_generator rosinstall rosdistro \
+                argcomplete catkin_pkg catkin_tools \
+                colcon-common-extensions coverage cryptography empy \
+                flake8 flake8-blind-except flake8-builtins flake8-comprehensions \
+                flake8-docstrings flake8-import-order flake8-quotes \
+                ifcfg importlib-metadata lark lark-parser lxml mock mypy netifaces \
+                nose numpy pep8 pycurl pydocstyle pydot pygraphviz pyparsing \
+                pyqt pyqt5-sip pytest pytest-mock pytest-repeat pytest-rerunfailures \
+                qt setuptools sphinx vcstool wheel wstool)
+
+    lib=(${lib[@]} log4cxx=0.10.0 urdfdom)
+    
+    # lib=(${lib[@]} bloom flake8-class-newline flake8-deprecated)
     
     case $run in
         install)
