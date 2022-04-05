@@ -27,27 +27,31 @@ export shell_dir=$(cd "$(dirname "$0")";pwd)
 
 #-----------------------------------------------------------------------------------
 function print_welcome {
-    # ---
-    echo
-    echo "* ----------------------------------------------------------------- "
-    echo "* This script is to install/remove ROS distribution from source ... "
+    printc_d "-----------------------------------------------------------------------------------"
+    printc_d " This script is to install/remove ROS distribution from source                     "
+    printc_d "                                                                                   "
+    printc_d " Author: Hao Feng (F1)                                                             "
+    printc_d " Date:   Nov. 22, 2021                                                             "
+    printc_d "                                                                                   "
+    printc_d " Copyright (c) 2021-, FATAVAY CO., LTD.                                            "
+    printc_d "-----------------------------------------------------------------------------------"
 
     # ---
     echo
     echo "* ------- "
-    echo "* specify ros distribution name ... "
+    printc_d "* specify ROS distribution name ... "
     echo
     echo  "         ROS1: melodic | noetic "
     echo  "         ROS2: foxy "
     echo
-    echo -n " * Please input ros name, [$distribution_default]: "
+    echo -n " * Please input ROS name, [$distribution_default]: "
     read distribution
     if [[ $distribution == "" ]]; then export distribution=$distribution_default; fi
 
     # ---
     echo
     echo "* ------- "
-    echo "* specify run mode ... "
+    printc_d "* specify run mode ... "
     echo
     echo -n "* Please input run mode: install/remove, [$run_default]: "
     read run
@@ -56,7 +60,7 @@ function print_welcome {
     # ---
     echo
     echo "* ------- "
-    echo "* specify step ... "
+    printc_d "* specify step ... "
     echo
     echo -n "* Please input step: all/auxilary/getsrc/compile, [$step_default]: "
     read step
@@ -66,7 +70,7 @@ function print_welcome {
     catkin_default=${ros_src_home}/${distribution}
     echo
     echo "* ------- "
-    echo "* specify ros source directory ... "
+    printc_d "* specify ROS source directory ... "
     echo
     echo -n "* Please input the ros source directory, [$catkin_default]: "
     read catkin
@@ -80,7 +84,7 @@ function print_welcome {
     # ---
     echo
     echo "* ------- "
-    echo "* specify ros virtual envrionment directory ... "
+    printc_d "* specify ROS virtual environment directory ... "
     echo
     echo -n "* Please input the ros virtual environment directory, [$bipath/../$rosenv_default]: "
     read rosenv
@@ -109,6 +113,24 @@ function print_welcome {
         read package
         if [[ $package == "" ]]; then export package=$package_default; fi
     fi
+}
+
+#-----------------------------------------------------------------------------------
+function printc {
+    declare -a bcolor fcolor
+    
+    fcolor=([black]=30 [red]=31 [green]=32 [yellow]=33 [blue]=34 [purple]=35 [skyblue]=36] [white]=37)
+    bcolor=([black]=40 [red]=41 [green]=42 [yellow]=44 [blue]=44 [purple]=45 [skyblue]=46] [white]=47)
+    txt=$3
+                                                                                                  
+    echo -e "\033[${bcolor[$1]};${fcolor[$2]}m${txt}\033[0m"
+}
+
+function printc_d {
+    bg=44
+    fg=37
+    txt=$1
+    echo -e "\033[${bg};${fg}m${txt}\033[0m"
 }
 
 #-----------------------------------------------------------------------------------
@@ -337,6 +359,7 @@ function conda_tools {
     case $run in
         install)
             echo "- create virtual ros environment ..."
+            echo 
 
             if [[ ! -d $rosenv ]]; then
                 conda create -y --prefix $rosenv python=3.8
@@ -368,9 +391,9 @@ function conda_tools {
 
             echo 
             echo "- $run conda packages in $rosenv ... "
-            echo "----------------------------------------- "
-            echo " ... ${lib[@]} ... "
-            echo "----------------------------------------- "
+            echo
+            echo "   ... ${lib[@]} ... "
+            echo "------------------------------------------------------------- "
             echo
             mamba $run -y ${lib[@]}
             ;;
