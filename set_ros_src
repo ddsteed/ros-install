@@ -11,13 +11,13 @@
 
 #- set global varialbles
 
-export roshome=/Users/fengh/Research/ROS
-export rosbin=/opt/ros
+export ros_src_home=/Users/fengh/Research/ROS
+export ros_dest=/opt/ros
 
 export distribution_default=foxy
 export run_default=install
 export rosenv_default=envtools
-export envmethod_default=conda
+export virvmethod_default=conda
 export step_default=compile
 export compiler_default=clang
 export package_default=all
@@ -63,7 +63,7 @@ function print_welcome {
     if [[ $step == "" ]]; then export step=$step_default; fi
 
     # ---
-    catkin_default=$roshome/${distribution}
+    catkin_default=${ros_src_home}/${distribution}
     echo
     echo "* ------- "
     echo "* specify ros source directory ... "
@@ -73,7 +73,7 @@ function print_welcome {
     if [[ $catkin == "" ]]; then export catkin=$catkin_default; fi
 
     # ---
-    export bipath=$rosbin/${distribution}_src
+    export bipath=${ros_dest}/${distribution}_src
     mkdir -p $bipath
     echo "The build & install base is: $bipath"
 
@@ -87,9 +87,9 @@ function print_welcome {
     if [[ $rosenv == "" ]]; then export rosenv=$bipath/../$rosenv_default; fi
     echo
     echo "* ------- "
-    echo -n "* Please input the ros virtual environment method: conda/pip, [$envmethod_default]: "
-    read envmethod
-    if [[ $envmethod == "" ]]; then export envmethod=$envmethod_default; fi
+    echo -n "* Please input the ros virtual environment method: conda/pip, [$virvmethod_default]: "
+    read virvmethod
+    if [[ $virvmethod == "" ]]; then export virvmethod=$virvmethod_default; fi
         
     # ---
     if [[ $step == "all" || $step == "compile" ]]; then
@@ -286,8 +286,18 @@ function brew_tools {
 }
 
 #-----------------------------------------------------------------------------------
+function init_virv {
+    if [[ $virvmethod == "pip" ]]; then
+        source $rosenv/bin/activate
+    elif [[ $virvmethod == "conda" ]]; then
+        source $rosenv/etc/profile.d/conda.sh
+        conda activate $rosenv
+    fi
+}
+
+#-----------------------------------------------------------------------------------
 function env_tools {
-    if [[ $envmethod == "pip" ]]; then
+    if [[ $virvmethod == "pip" ]]; then
         pip_tools
 
         if [[ $os == "Darwin" ]]; then
@@ -296,7 +306,7 @@ function env_tools {
             src_tools urdfdom
         fi
 
-    elif [[ $envmethod == "conda" ]]; then
+    elif [[ $virvmethod == "conda" ]]; then
         conda_tools
     fi
 }
@@ -305,7 +315,7 @@ function env_tools {
 function conda_tools {
     echo
     echo "* ------- "
-    echo "* conda $run some stuff ... "
+    echo "* conda $run some stuff ... (prior miniconda3/anaconda3 should have be installed)"
     echo
 
     source /opt/miniconda3/etc/profile.d/conda.sh
@@ -332,29 +342,29 @@ function conda_tools {
                 conda create -y --prefix $rosenv python=3.8
                 conda activate $rosenv
 
-                # conda config --env --add channels conda-forge
-                # conda config --env --set channel_priority strict
+                # add conda source
+                cat <<< '
+                show_channel_urls: true                                          
+                default_channels:                                                  
+                  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main        
+                  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free        
+                  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/r           
+                custom_channels:                                                   
+                  conda-forge: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud 
+                  msys2: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud       
+                  bioconda: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud    
+                  menpo: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud       
+                  pytorch: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud     
+                  simpleitk: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud   
+                channels:                                                          
+                  - conda-forge                                                    
+                  - defaults       '  > $rosenv/.condarc
 
-                echo "show_channel_urls: true                                            " >  $rosenv/.condarc
-                echo "default_channels:                                                  " >> $rosenv/.condarc
-                echo "  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main        " >> $rosenv/.condarc
-                echo "  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free        " >> $rosenv/.condarc
-                echo "  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/r           " >> $rosenv/.condarc
-                echo "custom_channels:                                                   " >> $rosenv/.condarc
-                echo "  conda-forge: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud " >> $rosenv/.condarc
-                echo "  msys2: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud       " >> $rosenv/.condarc
-                echo "  bioconda: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud    " >> $rosenv/.condarc
-                echo "  menpo: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud       " >> $rosenv/.condarc
-                echo "  pytorch: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud     " >> $rosenv/.condarc
-                echo "  simpleitk: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud   " >> $rosenv/.condarc
-                echo "channels:                                                          " >> $rosenv/.condarc
-                echo "  - conda-forge                                                    " >> $rosenv/.condarc
-                echo "  - defaults                                                       " >> $rosenv/.condarc
-               
+                # mamba is much faster than conda
                 conda install -y mamba
             fi
             
-            conda activate $rosenv
+            init_virv
 
             echo 
             echo "- $run conda packages in $rosenv ... "
@@ -417,7 +427,7 @@ function pip_tools {
         install)
             echo "- create virtual python environment ..."
             python3 -m venv   $rosenv
-            source $rosenv/bin/activate
+            init_virv
             $rosenv/bin/python3 -m pip install --upgrade pip
 
             echo 
@@ -443,7 +453,8 @@ function pip_tools {
             echo "- $run pip packages in $rosenv ... "
             echo "  -------- "
             echo
-            source $rosenv/bin/activate && pip3 uninstall -y ${lib[@]}
+
+            init_virv && pip3 uninstall -y ${lib[@]}
 
             echo "- delete virtual python environment $rosenv ... "
             rm -rf $rosenv
@@ -461,7 +472,7 @@ function pip_tools {
 #
 
 function src_tools {
-    source $rosenv/bin/activate
+    init_virv
 
     if [[ `uname` == "Darwin" ]]; then
         export CC='arch -x86_64 clang'
@@ -679,10 +690,7 @@ function set_compiler {
 
 function set_env {
 
-    # for pip environment
-    source $rosenv/bin/activate
-
-    # for conda environment
+    init_virv
     
     case $distribution in
         melodic | noetic)
@@ -764,7 +772,7 @@ function set_env {
 
 #-----------------------------------------------------------------------------------
 function get_src {
-    source $rosenv/bin/activate
+    init_virv
 
     if [[ $1 == "" ]]; then
         var=desktop
