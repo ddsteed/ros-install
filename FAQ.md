@@ -90,7 +90,16 @@
 
 	- find a VPN proxy. 
 	- use git ssh instead of git http in "~/.gitconfig"
-		
+
+## conda	
++ rviz\_ogre\_vendor
+
+	> /usr/local/include/OpenEXR/ImfInt64.h:16:10: fatal error: 'ImathInt64.h' file not found
+	
+	**OpenEXR** installed by **conda** is NOT found by cmake.
+	
+	-
+
 ## Linux
 
 + library_abs 

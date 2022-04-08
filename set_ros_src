@@ -1,7 +1,7 @@
 #!/usr/bin/env  bash
 
 #-----------------------------------------------------------------------------------
-# This script is to install ros from source
+# This script is to install ROS from source
 #
 # Author: Hao Feng (F1)
 # Date:   Nov. 22, 2021
@@ -16,9 +16,8 @@ export ros_dest=/opt/ros
 
 export distribution_default=foxy
 export run_default=install
-export rosenv_default=envtools
-export virvmethod_default=conda
-export step_default=compile
+export virvmethod_default=pip
+export procedure_default=compile
 export compiler_default=clang
 export package_default=all
 
@@ -60,11 +59,11 @@ function print_welcome {
     # ---
     echo
     echo "* ------- "
-    printc_d "* specify step ... "
+    printc_d "* specify procedure ... "
     echo
-    echo -n "* Please input step: all/auxilary/getsrc/compile, [$step_default]: "
-    read step
-    if [[ $step == "" ]]; then export step=$step_default; fi
+    echo -n "* Please input procedure: all/auxilary/getsrc/compile, [$procedure_default]: "
+    read procedure
+    if [[ $procedure == "" ]]; then export procedure=$procedure_default; fi
 
     # ---
     catkin_default=${ros_src_home}/${distribution}
@@ -72,34 +71,37 @@ function print_welcome {
     echo "* ------- "
     printc_d "* specify ROS source directory ... "
     echo
-    echo -n "* Please input the ros source directory, [$catkin_default]: "
+    echo -n "* Please input the ROS source directory, [$catkin_default]: "
     read catkin
     if [[ $catkin == "" ]]; then export catkin=$catkin_default; fi
 
     # ---
     export bipath=${ros_dest}/${distribution}_src
     mkdir -p $bipath
-    echo "The build & install base is: $bipath"
+    echo
+    echo "* ------- "
+    echo "* The build & install base is: $bipath"
 
     # ---
     echo
     echo "* ------- "
     printc_d "* specify ROS virtual environment directory ... "
     echo
-    echo -n "* Please input the ros virtual environment directory, [$bipath/../$rosenv_default]: "
-    read rosenv
-    if [[ $rosenv == "" ]]; then export rosenv=$bipath/../$rosenv_default; fi
-    echo
-    echo "* ------- "
-    echo -n "* Please input the ros virtual environment method: conda/pip, [$virvmethod_default]: "
+    echo -n "* Please input the ROS virtual environment method: conda/pip, [${virvmethod_default}]: "
     read virvmethod
-    if [[ $virvmethod == "" ]]; then export virvmethod=$virvmethod_default; fi
+    if [[ $virvmethod == "" ]]; then export virvmethod=${virvmethod_default}; fi
+    rosenv_default=${virvmethod}_venv
+    echo
+    echo -n "* Please input the ROS virtual environment directory, [$bipath/../${rosenv_default}]: "
+    read rosenv
+    if [[ $rosenv == "" ]]; then export rosenv=$bipath/../${rosenv_default}; fi
+
         
     # ---
-    if [[ $step == "all" || $step == "compile" ]]; then
+    if [[ $procedure == "all" || $procedure == "compile" ]]; then
         echo
         echo "* ------- "
-        echo "* specify compilers ... "
+        printc_d "* specify compilers ... "
         echo
         echo -n "* Please input compilers: clang/gnu/intel, [$compiler_default]: "
         read compiler
@@ -107,7 +109,7 @@ function print_welcome {
 
         echo
         echo "* ------- "
-        echo "* specify package to be compiled ..."
+        printc_d "* specify package to be compiled ..."
         echo
         echo -n "* Please input package name, [$package_default]: "
         read package
@@ -116,6 +118,8 @@ function print_welcome {
 }
 
 #-----------------------------------------------------------------------------------
+# --- show message in color
+
 function printc {
     declare -a bcolor fcolor
     
@@ -134,14 +138,13 @@ function printc_d {
 }
 
 #-----------------------------------------------------------------------------------
+# --- set default command path
+#     under mac, x86_64 is now preferred than zrm64
+
 function set_path {
-    case $os in
-        Darwin)
-            source ~/Init/x86
-            ;;
-        Linux)
-            ;;
-    esac
+    if [[ $os == Darwin ]]; then
+        source ~/Init/x86
+    fi
 
     export PATH="/usr/local/bin:$PATH"
 }
@@ -352,17 +355,17 @@ function conda_tools {
                 pyqt pyqt5-sip pytest pytest-mock pytest-repeat pytest-rerunfailures \
                 qt setuptools sphinx vcstool wheel wstool)
 
-    lib=(${lib[@]} log4cxx=0.10.0 urdfdom)
+    lib=(${lib[@]} log4cxx=0.10.0 ogre urdfdom)
     
     # lib=(${lib[@]} bloom flake8-class-newline flake8-deprecated)
     
     case $run in
         install)
-            echo "- create virtual ros environment ..."
+            echo "- create virtual ROS environment ..."
             echo 
 
             if [[ ! -d $rosenv ]]; then
-                conda create -y --prefix $rosenv python=3.8
+                conda create -y --prefix $rosenv python=3.9
                 conda activate $rosenv
 
                 # add conda source
@@ -398,7 +401,7 @@ function conda_tools {
             mamba $run -y ${lib[@]}
             ;;
         remove)
-            echo "- delete virtual ros environment $rosenv ... "
+            echo "- delete virtual ROS environment $rosenv ... "
             rm -rf $rosenv
             ;;
     esac
@@ -497,7 +500,7 @@ function pip_tools {
 function src_tools {
     init_virv
 
-    if [[ `uname` == "Darwin" ]]; then
+    if [[ $os == "Darwin" ]]; then
         export CC='arch -x86_64 clang'
         export CXX='arch -x86_64 clang++' 
     fi
@@ -529,7 +532,7 @@ function src_tools {
 
                     python3 ./configure.py
 
-                    if [[ `uname` == "Darwin" ]]; then
+                    if [[ $os == "Darwin" ]]; then
                         arch -x86_64 make
                     else
                         make
@@ -712,7 +715,6 @@ function set_compiler {
 #-----------------------------------------------------------------------------------
 
 function set_env {
-
     init_virv
     
     case $distribution in
@@ -750,23 +752,26 @@ function set_env {
             ;;
         foxy)
             if [[ $os == "Darwin" ]]; then
-                export OPENSSL_ROOT_DIR=$(ibrew --prefix openssl)
+                if [[ $virvmethod == "pip" ]]; then
+                    export OPENSSL_ROOT_DIR=$(ibrew --prefix openssl)
 
-                export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:/usr/local/opt/bison
-                export PATH="/usr/local/opt/bison/bin:$PATH"
-
-                export CMAKE_PREFIX_PATH="$(ibrew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
-                export PATH="$(ibrew --prefix opencv)/bin:$PATH"
-
-                export CMAKE_PREFIX_PATH="$(ibrew --prefix qt@5):$CMAKE_PREFIX_PATH"
-                export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
-
-                export CMAKE_PREFIX_PATH="$(ibrew --prefix assimp):$CMAKE_PREFIX_PATH"
-                export PATH="$(ibrew --prefix assimp)/bin:$PATH"
-
-                export CMAKE_PREFIX_PATH="$(ibrew --prefix ogre1.9):$CMAKE_PREFIX_PATH"
-                export PATH="$(ibrew --prefix ogre1.9)/bin:$PATH"
-         
+                    export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:/usr/local/opt/bison
+                    export PATH="/usr/local/opt/bison/bin:$PATH"
+                    
+                    export CMAKE_PREFIX_PATH="$(ibrew --prefix opencv)/include/opencv4:$CMAKE_PREFIX_PATH"
+                    export PATH="$(ibrew --prefix opencv)/bin:$PATH"
+                    
+                    export CMAKE_PREFIX_PATH="$(ibrew --prefix qt@5):$CMAKE_PREFIX_PATH"
+                    export PATH="$(ibrew --prefix qt@5)/bin:$PATH"
+                    
+                    export CMAKE_PREFIX_PATH="$(ibrew --prefix assimp):$CMAKE_PREFIX_PATH"
+                    export PATH="$(ibrew --prefix assimp)/bin:$PATH"
+                    
+                    export CMAKE_PREFIX_PATH="$(ibrew --prefix ogre1.9):$CMAKE_PREFIX_PATH"
+                    export PATH="$(ibrew --prefix ogre1.9)/bin:$PATH"
+                elif [[ $virvmethod == "conda" ]]; then
+                    export OPENEXR_INCLUDE_DIR="$rosenv/include"
+                fi
                 # close all warning messages since ROS is compiled by non-ISO C++-11
                 export CXXFLAGS="-w "
             elif [[ $os == "Linux" ]]; then
@@ -1020,18 +1025,18 @@ fi
 print_welcome
 set_path
 
-if [[ $step == "all" || $step == "auxilary" ]]; then
+if [[ $procedure == "all" || $procedure == "auxilary" ]]; then
     set_compiler
     set_auxilary
 fi
 
-if [[ $step == "all" || $step == "getsrc" ]]; then
+if [[ $procedure == "all" || $procedure == "getsrc" ]]; then
     get_src
     patch_src
     ros_init
 fi
 
-if [[ $step == "all" || $step == "compile" ]]; then
+if [[ $procedure == "all" || $procedure == "compile" ]]; then
     set_compiler
     set_env
     patch_src
