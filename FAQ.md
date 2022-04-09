@@ -1,7 +1,7 @@
 # noetic
 
 ## General
-+ Visualization_msg/Marker.h
++ Visualization\_msg/Marker.h
 
 	> Marker.h NOT found
 	
@@ -48,6 +48,12 @@
 	export CMAKE_PREFIX_PATH="/usr/local/include/OpenGL:$CMAKE_PREFIX_PATH"
   	```
     
+   > sip: Deprecation warning: qt\_gui\_cpp.sip:1: %Module version number should be specified using the 'version' argument
+
+   > sip: /opt/ros/pip\_venv/lib/python3.9/site-packages/PyQt5/bindings/QtCore/QtCoremod.sip:23: syntax error
+
+	- rm **py\_ssize\_t\_clean=True** in QtCoremod.sip:23
+
 + rviz
 
 	>  Could NOT find OpenGL (missing: OPENGL\_gl\_LIBRARY)
