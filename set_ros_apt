@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+#
+#-------------------------------------------------------------------------------------------------
+# apt install/remove ros 
+#
+
+# Author: Hao Feng (F1)
+# Date:   Nov. 24, 2021
+#
+# Copyright (c) 2021, FATAVAY CO., LTD.
+#-------------------------------------------------------------------------------------------------
+
+distribution_default=foxy
+version_default=desktop
+run_default=install
+
+echo
+echo "* --------------------------------------------------------------- "
+echo "  This script is to install/remove ROS distribution using apt ... "
+
+echo
+echo "* ------- "
+echo "* specify ros distribution name ... "
+echo
+echo  "         ROS1: melodic/noetic "
+echo  "         ROS2: foxy/galactic/rolling "
+echo
+echo -n " * Please input ros name, [$distribution_default]: "
+read distribution
+if [[ $distribution == "" ]]; then distribution=$distribution_default; fi
+
+echo
+echo "* ------- "
+echo "* specify version ... "
+echo
+echo -n "* Please input version: desktop/full, [$version_default]: "
+read version
+if [[ $version == "" ]]; then version=$version_default; fi
+
+echo
+echo "* ------- "
+echo "* specify run mode ... "
+echo
+echo -n "* Please input run mode: install/remove, [$run_default]: "
+read run
+if [[ $run == "" ]]; then run=$run_default; fi
+
+# begin to work
+echo
+echo " * begin to work ... "
+echo " * ------------- "
+echo
+
+if [[ $run == "install" ]]; then
+    echo
+    echo " * ------------- "
+    echo " * set install environment variables ... "
+    echo
+    
+    # add ros repositories. Since it is needed at the first time, so one could comment it later.
+    # curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
+
+    case $distribution in
+        melodic | noetic)
+            sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+            ;;
+        foxy | galactic | rolling)
+            # sudo apt update && sudo apt install curl gnupg2 lsb-release 
+            # sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key  -o /usr/share/keyrings/ros-archive-keyring.gpg
+            sudo cp ./ros.key /usr/share/keyrings/ros-archive-keyring.gpg
+            
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
+             http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+            
+            sudo sed -i -e 's/ubuntu .* main/ubuntu focal main/g' /etc/apt/sources.list.d/ros2.list
+            sudo apt-get update
+            ;;
+    esac
+fi
+
+case $version in
+    desktop)
+        sudo apt-get $run -y ros-$distribution-desktop
+        ;;
+    full)
+        num=1
+        for lib in `apt-cache pkgnames ros-$distribution`
+        do
+            echo
+            echo " * ----------- "
+            echo "   now $run # $num ... "
+            echo
+            sudo apt-get $run -y $lib
+            let num++
+        done
+        ;;
+esac
+
+if [[ $run == "remove" ]]; then
+    sudo apt autoremove
+fi

@@ -92,9 +92,9 @@ function print_welcome {
     if [[ $virvmethod == "" ]]; then export virvmethod=${virvmethod_default}; fi
     rosenv_default=${virvmethod}_venv
     echo
-    echo -n "* Please input the ROS virtual environment directory, [$bipath/../${rosenv_default}]: "
+    echo -n "* Please input the ROS virtual environment directory, [${ros_dest}/${rosenv_default}]: "
     read rosenv
-    if [[ $rosenv == "" ]]; then export rosenv=$bipath/../${rosenv_default}; fi
+    if [[ $rosenv == "" ]]; then export rosenv=${ros_dest}/${rosenv_default}; fi
 
         
     # ---
@@ -284,7 +284,6 @@ function brew_tools {
             lib=(${lib[@]} assimp console_bridge opencv poco tinyxml tinyxml2)
             lib=(${lib[@]} orocos-kdl boost boost-python3 gpgme openssl)
             lib=(${lib[@]} graphviz qt@5 freetype)
-            lib=(${lib[@]} sip ogre1.9)
 
             # log4cxx change smart pointer from which ROS1 could NOT call, so install it manually.
             ibrew uninstall log4cxx -f
@@ -326,7 +325,7 @@ function env_tools {
         pip_tools
 
         if [[ $os == "Darwin" ]]; then
-            src_tools urdfdom log4cxx
+            src_tools sip pyqt ogre urdfdom log4cxx
         elif [[ $os == "Linux" ]]; then
             src_tools urdfdom
         fi
@@ -351,7 +350,7 @@ function conda_tools {
                 flake8 flake8-blind-except flake8-builtins flake8-comprehensions \
                 flake8-docstrings flake8-import-order flake8-quotes \
                 ifcfg importlib-metadata lark lark-parser lxml mock mypy netifaces \
-                nose numpy pep8 pycurl pydocstyle pydot pygraphviz pyparsing \
+                nose numpy ogre pep8 pycurl pydocstyle pydot pygraphviz pyparsing \
                 pyqt pyqt5-sip pytest pytest-mock pytest-repeat pytest-rerunfailures \
                 qt setuptools sphinx vcstool wheel wstool)
 
@@ -369,25 +368,28 @@ function conda_tools {
                 conda activate $rosenv
 
                 # add conda source
-                cat <<< '
-                show_channel_urls: true                                          
-                default_channels:                                                  
-                  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main        
-                  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free        
-                  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/r           
-                custom_channels:                                                   
-                  conda-forge: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud 
-                  msys2: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud       
-                  bioconda: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud    
-                  menpo: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud       
-                  pytorch: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud     
-                  simpleitk: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud   
-                channels:                                                          
-                  - conda-forge                                                    
-                  - defaults       '  > $rosenv/.condarc
+                # cat <<< '
+                # show_channel_urls: true                                          
+                # default_channels:                                                  
+                #   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main        
+                #   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free        
+                #   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/r           
+                # custom_channels:                                                   
+                #   conda-forge: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud 
+                #   msys2: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud       
+                #   bioconda: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud    
+                #   menpo: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud       
+                #   pytorch: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud     
+                #   simpleitk: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud   
+                # channels:                                                          
+                #   - conda-forge                                                    
+                #   - defaults       '  > $rosenv/.condarc
 
                 # mamba is much faster than conda
-                conda install -y mamba
+                conda install -y mamba -c conda-forge
+
+                # add channels
+                conda config --env --add channels conda-forge
             fi
             
             init_virv
