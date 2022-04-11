@@ -14,7 +14,7 @@
 export ros_src_home=/Users/fengh/Research/ROS
 export ros_dest=/opt/ros
 
-export distribution_default=foxy
+export distribution_default=noetic
 export run_default=install
 export virvmethod_default=pip
 export procedure_default=compile
@@ -95,7 +95,6 @@ function print_welcome {
     echo -n "* Please input the ROS virtual environment directory, [${ros_dest}/${rosenv_default}]: "
     read rosenv
     if [[ $rosenv == "" ]]; then export rosenv=${ros_dest}/${rosenv_default}; fi
-
         
     # ---
     if [[ $procedure == "all" || $procedure == "compile" ]]; then

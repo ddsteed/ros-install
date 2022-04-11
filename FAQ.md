@@ -28,7 +28,6 @@
   
   	- install urdfdom from source.
   	
-  	
 + log4cxx
 
 	> no viable conversion from normal pointer to smart shared_ptr
